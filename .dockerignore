@@ -1,0 +1,25 @@
+.git
+.gitignore
+.idea
+.vscode
+.dart_tool
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub
+build
+
+# Non-web platforms are excluded from Docker context
+android
+ios
+linux
+macos
+windows
+
+# Local/editor/system noise
+*.iml
+*.log
+*.swp
+*.tmp
+Thumbs.db
+.DS_Store
