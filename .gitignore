@@ -124,3 +124,7 @@ app.*.symbols
 /linux/
 /macos/
 /windows/
+
+# IDE files
+/.idea/
+*.iml
