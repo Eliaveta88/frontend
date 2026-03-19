@@ -24,7 +24,12 @@ class AppShell extends ConsumerWidget {
 
   int _selectedIndex(String location) {
     for (var i = _destinations.length - 1; i >= 0; i--) {
-      if (location.startsWith(_destinations[i].route)) return i;
+      final route = _destinations[i].route;
+      if (route == Routes.dashboard) {
+        if (location == Routes.dashboard) return i;
+        continue;
+      }
+      if (location == route || location.startsWith('$route/')) return i;
     }
     return 0;
   }
@@ -40,7 +45,7 @@ class AppShell extends ConsumerWidget {
 
     return AnimatedEmojiBackground(
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: colors.surface,
         appBar: AppBar(
           backgroundColor: colors.surface.withAlpha(230),
           title: Row(
@@ -102,7 +107,7 @@ class AppShell extends ConsumerWidget {
             NavigationRail(
               extended: !isCompact,
               minExtendedWidth: 200,
-              backgroundColor: Colors.transparent,
+              backgroundColor: colors.surfaceContainerLow.withAlpha(235),
               selectedIndex: selected,
               onDestinationSelected: (i) {
                 context.go(_destinations[i].route);
