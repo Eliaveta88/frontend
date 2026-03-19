@@ -83,7 +83,7 @@ class CatalogPage extends StatelessWidget {
               final i = e.key;
               final p = e.value;
               final stockColor = p.stock == 'В наличии'
-                  ? const Color(0xFF43A047)
+                  ? colors.primary
                   : p.stock == 'Мало'
                       ? colors.error
                       : colors.outline;

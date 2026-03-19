@@ -105,10 +105,11 @@ class FinancePage extends StatelessWidget {
             overLimit ? 'Превышен' : 'Норма',
             style: TextStyle(
               fontSize: 12,
-              color: overLimit ? colors.error : const Color(0xFF43A047),
+              color: overLimit ? colors.error : colors.primary,
             ),
           ),
-          backgroundColor: (overLimit ? colors.error : const Color(0xFF43A047)).withAlpha(20),
+          backgroundColor:
+              (overLimit ? colors.error : colors.primary).withAlpha(20),
           side: BorderSide.none,
           visualDensity: VisualDensity.compact,
           padding: EdgeInsets.zero,
@@ -121,14 +122,14 @@ class FinancePage extends StatelessWidget {
     return ListTile(
       leading: Icon(
         incoming ? Icons.arrow_downward : Icons.arrow_upward,
-        color: incoming ? const Color(0xFF43A047) : colors.error,
+        color: incoming ? colors.primary : colors.error,
       ),
       title: Text(title),
       trailing: Text(
         amount,
         style: TextStyle(
           fontWeight: FontWeight.w600,
-          color: incoming ? const Color(0xFF43A047) : colors.error,
+          color: incoming ? colors.primary : colors.error,
         ),
       ),
     );

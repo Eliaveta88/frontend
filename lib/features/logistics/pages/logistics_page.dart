@@ -119,7 +119,7 @@ class LogisticsPage extends StatelessWidget {
     return ListTile(
       leading: Icon(
         done ? Icons.check_circle : Icons.radio_button_unchecked,
-        color: done ? const Color(0xFF43A047) : colors.outline,
+        color: done ? colors.primary : colors.outline,
       ),
       title: Text(client),
       subtitle: Text(address),
@@ -127,7 +127,7 @@ class LogisticsPage extends StatelessWidget {
         status,
         style: TextStyle(
           color: done
-              ? const Color(0xFF43A047)
+              ? colors.primary
               : status == 'В пути'
                   ? colors.primary
                   : colors.onSurfaceVariant,

@@ -76,10 +76,11 @@ class AdminPage extends StatelessWidget {
             active ? 'Активен' : 'Заблокирован',
             style: TextStyle(
               fontSize: 12,
-              color: active ? const Color(0xFF43A047) : colors.error,
+              color: active ? colors.primary : colors.error,
             ),
           ),
-          backgroundColor: (active ? const Color(0xFF43A047) : colors.error).withAlpha(20),
+          backgroundColor:
+              (active ? colors.primary : colors.error).withAlpha(20),
           side: BorderSide.none,
           visualDensity: VisualDensity.compact,
           padding: EdgeInsets.zero,

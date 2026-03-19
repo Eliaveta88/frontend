@@ -44,7 +44,7 @@ class DashboardPage extends StatelessWidget {
               value: '₽ 2.4M',
               trend: '+8%',
               trendUp: true,
-              color: Color(0xFF43A047),
+              color: colors.primary,
             ),
             _KpiCard(
               icon: Icons.local_shipping,
@@ -136,13 +136,14 @@ class _KpiCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: (trendUp ? const Color(0xFF43A047) : colors.error).withAlpha(20),
+                        color: (trendUp ? colors.primary : colors.error)
+                            .withAlpha(20),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         trend,
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: trendUp ? const Color(0xFF43A047) : colors.error,
+                          color: trendUp ? colors.primary : colors.error,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

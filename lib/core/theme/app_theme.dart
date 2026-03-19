@@ -15,9 +15,17 @@ class AppTheme {
   }
 
   static ThemeData dark() {
-    final scheme = ColorScheme.fromSeed(
+    final baseScheme = ColorScheme.fromSeed(
       seedColor: _seed,
       brightness: Brightness.dark,
+    );
+    final scheme = baseScheme.copyWith(
+      surface: const Color(0xFF0B1013),
+      surfaceContainerLowest: const Color(0xFF0E1418),
+      surfaceContainerLow: const Color(0xFF11191F),
+      surfaceContainer: const Color(0xFF152026),
+      surfaceContainerHigh: const Color(0xFF1A2630),
+      surfaceContainerHighest: const Color(0xFF1F2D38),
     );
     return _build(scheme);
   }

@@ -18,6 +18,7 @@ import 'route_names.dart';
 
 final _rootNavKey = GlobalKey<NavigatorState>();
 final _shellNavKey = GlobalKey<NavigatorState>();
+const _authEnabled = false;
 
 final routerProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authProvider);
@@ -26,6 +27,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     navigatorKey: _rootNavKey,
     initialLocation: Routes.dashboard,
     redirect: (context, state) {
+      if (!_authEnabled) return null;
       final loggedIn = auth.isAuthenticated;
       final goingToLogin = state.matchedLocation == Routes.login;
 

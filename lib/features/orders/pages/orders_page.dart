@@ -65,7 +65,7 @@ class OrdersPage extends StatelessWidget {
                 colors.outline,
                 colors.primary,
                 colors.tertiary,
-                const Color(0xFF43A047),
+                colors.primary,
               ];
               final si = i % 4;
               return DataRow(

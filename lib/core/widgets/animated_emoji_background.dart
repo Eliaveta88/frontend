@@ -70,8 +70,9 @@ class _AnimatedEmojiBackgroundState extends State<AnimatedEmojiBackground>
         AnimatedBuilder(
           animation: _ctrl,
           builder: (context, _) {
+            final overlayColor = Theme.of(context).colorScheme.onSurfaceVariant;
             return CustomPaint(
-              painter: _EmojiPainter(_particles, _ctrl.value),
+              painter: _EmojiPainter(_particles, _ctrl.value, overlayColor),
               size: Size.infinite,
             );
           },
@@ -105,10 +106,11 @@ class _EmojiParticle {
 }
 
 class _EmojiPainter extends CustomPainter {
-  _EmojiPainter(this.particles, this.t);
+  _EmojiPainter(this.particles, this.t, this.overlayColor);
 
   final List<_EmojiParticle> particles;
   final double t;
+  final Color overlayColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -128,7 +130,8 @@ class _EmojiPainter extends CustomPainter {
 
       canvas.save();
       canvas.translate(px, py);
-      final paint = Paint()..color = Colors.white.withAlpha((p.opacity * 255).toInt());
+      final paint =
+          Paint()..color = overlayColor.withAlpha((p.opacity * 255).toInt());
       canvas.saveLayer(Rect.fromLTWH(0, 0, tp.width, tp.height), paint);
       tp.paint(canvas, Offset.zero);
       canvas.restore();
