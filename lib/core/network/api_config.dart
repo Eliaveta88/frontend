@@ -28,4 +28,7 @@ abstract final class ApiPaths {
       '/orders/api/v1/orders?skip=$skip&limit=$limit';
 
   static String ordersOrder(int id) => '/orders/api/v1/orders/$id';
+
+  static String warehouseStock({int skip = 0, int limit = 50}) =>
+      '/warehouse/api/v1/warehouse?skip=$skip&limit=$limit';
 }
