@@ -1,8 +1,8 @@
 # План GastroRoute (актуально)
 
-**Последнее обновление:** 2026-03-22 (фаза 5.2 — smoke widget test).
+**Последнее обновление:** 2026-03-22 (фаза 4 ✅; фаза 5.2 в работе).
 
-Кратко: **P1–P2 и продуктовый UI-план закрыты**; кнопки каталога/админа/финансов/логистики связаны с API; дашборд — **KPI рейсов в пути** считается по `total` с фильтром `status` на логистике.
+Кратко: **P1–P2 и продуктовый UI-план закрыты**; **фаза 4 (интеграции бэкенда)** закрыта; кнопки каталога/админа/финансов/логистики связаны с API; дашборд — **KPI рейсов в пути** по `total` + `status` на логистике.
 
 ---
 
@@ -21,6 +21,7 @@
 | Продуктовый UI: без Traefik/dev-текстов в интерфейсе | ✅ см. `PLAN_UI_PRODUCT.md` |
 | **Фаза 2** — persist JWT, восстановление сессии, бизнес-API через `dioProvider` | ✅ |
 | **Фаза 3.2–3.3** — выручка за день по API `GET .../revenue`; лента заказы+транзакции | ✅ |
+| **Фаза 4** — HTTP между сервисами (orders/warehouse/logistics/finance ↔ catalog/identity/orders), invoice в БД, `tests_api` | ✅ |
 
 ---
 
@@ -57,7 +58,7 @@
 
 ---
 
-## Фаза 4 — Интеграция микросервисов (бэкенд)
+## Фаза 4 — Интеграция микросервисов (бэкенд) — ✅ закрыта
 
 **Цель:** убрать заглушки в данных; единые справочники.
 
@@ -66,8 +67,10 @@
 | **orders** | ✅ **Цены/имена** — `httpx` → catalog `GET .../products/{id}`; **client_name** — identity `GET .../users/{id}`; в Docker: `CATALOG_BASE_URL`, `IDENTITY_BASE_URL` |
 | **warehouse** | ✅ **product_name** при оприходовании — catalog; `CATALOG_BASE_URL` |
 | **logistics** | ✅ **driver_name** — username из identity по `driver_id`, иначе значение из формы; `IDENTITY_BASE_URL` |
-| **finance** | **`credit_limit` и `status` из таблицы `accounts` в balance API** ✅; **генерация invoice** — строка в `invoices`, суммы из orders HTTP (`ORDERS_BASE_URL`), PDF — заглушка `GET .../pdf` (501) |
-| **identity** | ✅ **bcrypt** для новых паролей + проверка; legacy `hashed_<plain>` для старых записей; **`GET /users/{id}`** для интеграций |
+| **finance** | ✅ **`credit_limit` и `status`** в balance; **invoice** — таблица `invoices`, суммы из orders (`ORDERS_BASE_URL`); **PDF** — отдельная задача (`GET .../pdf` пока 501) |
+| **identity** | ✅ **bcrypt** + legacy `hashed_<plain>`; **`GET /users/{id}`** для интеграций |
+
+**Опционально позже:** бинарный PDF для счёта (WeasyPrint/ReportLab или отдельный воркер), webhooks/события оплаты.
 
 ---
 
@@ -76,8 +79,17 @@
 | # | Задача | Статус |
 |---|--------|--------|
 | 5.1 | Кнопки каталога/админа/финансов/логистики | ✅ связано с API |
-| 5.2 | Тесты (widget/integration), CI | ⏳ расширить (полный `GastroRouteApp` + моки Dio); **CI** — `.github/workflows/ci.yml` (analyze + `flutter test`); минимальный widget smoke в `test/app_smoke_test.dart` ✅ |
-| 5.3 | `git push` сабмодулей + bump в корневом репо | по необходимости |
+| 5.2 | Тесты (widget/integration), CI | ⏳ **дальше:** моки `Dio` + `ProviderScope`, сценарии дашборда/заказов/ошибок; **CI** уже есть (`.github/workflows/ci.yml`: analyze + test); smoke `test/app_smoke_test.dart` ✅ |
+| 5.3 | `git push` сабмодулей + bump в корневом репо | по необходимости (после фич — как сейчас) |
+
+---
+
+## Дальше — приоритеты
+
+1. **Фаза 5.2 (фронт):** расширить тесты — поднять `GastroRouteApp` под тест с **подменой провайдеров/Dio**, чтобы не было сетевых вызовов и pending timers; покрыть 1–2 ключевых экрана (например дашборд, список заказов) widget-тестами.
+2. **Finance (бэкенд, по желанию):** реализовать выдачу PDF для `GET .../invoices/{id}/pdf` или отдать стаб-файл и договориться о формате с фронтом.
+3. **Качество:** дополнить `tests_api` сценариями «счёт после создания заказа»; в сабмодулях без покрытия — **catalog** — точечные unit-тесты.
+4. **Эксплуатация:** зафиксировать `AUTH_ENABLED`/`API_BASE_URL` для стендов, health-чеки в CI или watchtower — по мере вывода в прод.
 
 ---
 
