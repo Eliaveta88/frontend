@@ -38,6 +38,17 @@ flutter run -d chrome --dart-define=AUTH_ENABLED=true --dart-define=API_BASE_URL
 
 После успешного входа `client_id` для финансов подставляется из **id пользователя** identity (для сидов 1:1 с `accounts.client_id`).
 
+Пара **access / refresh** токенов сохраняется в **SharedPreferences** (в т.ч. на Web — в localStorage). После перезапуска приложения сессия восстанавливается, профиль подтягивается через `GET .../users/me`.
+
+### Публичные и защищённые запросы
+
+| Клиент | Назначение |
+|--------|------------|
+| **`rawDioProvider`** | Без `Authorization`: `POST /login`, `POST /refresh`, регистрация пользователя (`POST /users`), список пользователей в админке (`GET /users`) — пока без JWT на бэкенде. |
+| **`dioProvider`** | С [AuthInterceptor](lib/core/network/auth_interceptor.dart): при наличии access-токена добавляется `Bearer`; автоматический refresh при 401. Используется для каталога, заказов, склада, финансов, логистики и для `GET /users/me`, `POST /logout`. |
+
+Если токена нет (режим без `AUTH_ENABLED` или до входа), `dioProvider` отправляет те же запросы, что и раньше без заголовка авторизации.
+
 ### Ошибки сети в UI
 
 Сообщения для пользователя нормализуются через `lib/core/network/dio_error_mapper.dart` (`dioErrorMessage`).
@@ -56,7 +67,7 @@ flutter run -d chrome --dart-define=AUTH_ENABLED=true --dart-define=API_BASE_URL
 | Логин | `POST .../identity/api/v1/identity/login` (токены в `authProvider`) |
 | Refresh | Через `AuthInterceptor` → `POST .../identity/refresh` |
 
-Каталог и финансы используют **публичные** запросы (`rawDio` без JWT). Для защищённых маршрутов используйте `dioProvider` (Bearer из `authProvider`).
+Каталог, заказы, склад, финансы и логистика идут через **`dioProvider`**: при входе к запросам добавляется Bearer; без токена поведение как у анонимного клиента. Только логин, refresh и часть identity-эндпоинтов остаются на **`rawDioProvider`** (см. таблицу выше).
 
 ## Запуск
 
