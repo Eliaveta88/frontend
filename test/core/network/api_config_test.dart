@@ -37,5 +37,18 @@ void main() {
       final p = ApiPaths.catalogAutocomplete('молоко & сыр');
       expect(p, contains(Uri.encodeQueryComponent('молоко & сыр')));
     });
+
+    test('logisticsRoutes optional status', () {
+      expect(
+        ApiPaths.logisticsRoutes(skip: 0, limit: 1),
+        '/logistics/api/v1/logistics?skip=0&limit=1',
+      );
+      final withStatus = ApiPaths.logisticsRoutes(
+        skip: 0,
+        limit: 1,
+        status: 'in_progress',
+      );
+      expect(withStatus, contains('status=in_progress'));
+    });
   });
 }

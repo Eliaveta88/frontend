@@ -62,8 +62,20 @@ abstract final class ApiPaths {
 
   static const warehouseReceive = '/warehouse/api/v1/warehouse/receive';
 
-  static String logisticsRoutes({int skip = 0, int limit = 50}) =>
-      '/logistics/api/v1/logistics?skip=$skip&limit=$limit';
+  static String logisticsRoutes({
+    int skip = 0,
+    int limit = 50,
+    String? status,
+  }) {
+    final params = <String, String>{
+      'skip': '$skip',
+      'limit': '$limit',
+    };
+    if (status != null && status.isNotEmpty) {
+      params['status'] = status;
+    }
+    return '/logistics/api/v1/logistics?${Uri(queryParameters: params).query}';
+  }
 
   /// POST создание маршрута (тело без query).
   static const logisticsRoutesCreate = '/logistics/api/v1/logistics';

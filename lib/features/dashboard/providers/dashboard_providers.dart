@@ -29,7 +29,7 @@ class DashboardSummary {
   /// Сумма проведённых (`completed`) транзакций за сегодня для текущего `client_id`.
   final double? revenueTodayRub;
 
-  /// Маршруты со статусом `in_progress` (по первой странице списка).
+  /// Маршруты со статусом `in_progress` (поле `total` с API при фильтре по статусу).
   final int? routesInProgress;
 
   /// Частичные сбои (остальные KPI могли загрузиться).
@@ -120,16 +120,12 @@ final dashboardSummaryProvider = FutureProvider.autoDispose<DashboardSummary>((r
 
   Future<void> loadLogistics() async {
     try {
-      final r = await raw.get<Map<String, dynamic>>(ApiPaths.logisticsRoutes(skip: 0, limit: 200));
+      final r = await raw.get<Map<String, dynamic>>(
+        ApiPaths.logisticsRoutes(skip: 0, limit: 1, status: 'in_progress'),
+      );
       final data = r.data;
       if (data == null) return;
-      final items = data['items'] as List<dynamic>? ?? [];
-      var n = 0;
-      for (final e in items) {
-        final m = e as Map<String, dynamic>;
-        if (m['status']?.toString() == 'in_progress') n++;
-      }
-      routesInProgress = n;
+      routesInProgress = (data['total'] as num?)?.toInt();
     } catch (e) {
       partialErrors.add('Логистика: ${dioErrorMessage(e)}');
     }

@@ -10,8 +10,14 @@ class LogisticsApiService {
 
   final Dio _dio;
 
-  Future<RouteListPage> listRoutes({int skip = 0, int limit = 100}) async {
-    final r = await _dio.get<Map<String, dynamic>>(ApiPaths.logisticsRoutes(skip: skip, limit: limit));
+  Future<RouteListPage> listRoutes({
+    int skip = 0,
+    int limit = 100,
+    String? status,
+  }) async {
+    final r = await _dio.get<Map<String, dynamic>>(
+      ApiPaths.logisticsRoutes(skip: skip, limit: limit, status: status),
+    );
     final data = r.data;
     if (data == null) {
       throw Exception('Пустой ответ логистики');
