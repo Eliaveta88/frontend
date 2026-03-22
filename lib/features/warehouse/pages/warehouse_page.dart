@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_services/warehouse_api_service.dart';
 import '../../../core/network/dio_error_mapper.dart';
+import '../../../core/widgets/async_error_card.dart';
+import '../../../core/widgets/empty_list_state.dart';
+import '../../../core/widgets/loading_skeletons.dart';
 import '../providers/warehouse_providers.dart';
 
 class WarehousePage extends ConsumerWidget {
@@ -15,13 +18,37 @@ class WarehousePage extends ConsumerWidget {
     final async = ref.watch(warehouseStockProvider);
 
     return async.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SkeletonLine(width: 120, height: 28),
+                    const SizedBox(height: 8),
+                    const SkeletonLine(width: 200, height: 16),
+                  ],
+                ),
+              ),
+              const SkeletonLine(width: 140, height: 40),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const SkeletonLine(width: 100, height: 18),
+          const SizedBox(height: 12),
+          const TableLoadingSkeleton(columnCount: 4, rowCount: 5),
+        ],
+      ),
       error: (e, _) => Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: SelectableText(
-            'Ошибка: ${dioErrorMessage(e)}',
-            style: TextStyle(color: colors.error),
+          child: AsyncErrorCard(
+            error: e,
+            title: 'Не удалось загрузить склад',
+            onRetry: () => ref.invalidate(warehouseStockProvider),
           ),
         ),
       ),
@@ -58,35 +85,36 @@ class WarehousePage extends ConsumerWidget {
             const SizedBox(height: 24),
             Text('Остатки', style: theme.textTheme.titleMedium),
             const SizedBox(height: 12),
-            Card(
-              child: page.items.isEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        'Нет строк на складе (или БД пуста).',
-                        style: theme.textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
+            if (page.items.isEmpty)
+              EmptyListState(
+                icon: Icons.warehouse_outlined,
+                title: 'Остатков нет',
+                message: 'Добавьте оприходование или проверьте данные в БД.',
+                actionLabel: 'Обновить',
+                onAction: () => ref.invalidate(warehouseStockProvider),
+              )
+            else
+              Card(
+                child: DataTable(
+                  columns: const [
+                    DataColumn(label: Text('Товар')),
+                    DataColumn(label: Text('Доступно'), numeric: true),
+                    DataColumn(label: Text('Резерв'), numeric: true),
+                    DataColumn(label: Text('Ячейка')),
+                  ],
+                  rows: [
+                    for (final s in page.items)
+                      DataRow(
+                        cells: [
+                          DataCell(Text('${s.productName} (#${s.productId})')),
+                          DataCell(Text(_fmtQty(s.available))),
+                          DataCell(Text(_fmtQty(s.reserved))),
+                          DataCell(Text(s.cellLocation)),
+                        ],
                       ),
-                    )
-                  : DataTable(
-                      columns: const [
-                        DataColumn(label: Text('Товар')),
-                        DataColumn(label: Text('Доступно'), numeric: true),
-                        DataColumn(label: Text('Резерв'), numeric: true),
-                        DataColumn(label: Text('Ячейка')),
-                      ],
-                      rows: [
-                        for (final s in page.items)
-                          DataRow(
-                            cells: [
-                              DataCell(Text('${s.productName} (#${s.productId})')),
-                              DataCell(Text(_fmtQty(s.available))),
-                              DataCell(Text(_fmtQty(s.reserved))),
-                              DataCell(Text(s.cellLocation)),
-                            ],
-                          ),
-                      ],
-                    ),
-            ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

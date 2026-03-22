@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/network/dio_error_mapper.dart';
+import '../../../core/widgets/async_error_card.dart';
+import '../../../core/widgets/empty_list_state.dart';
+import '../../../core/widgets/loading_skeletons.dart';
 import '../providers/admin_users_provider.dart';
 
 class AdminPage extends ConsumerWidget {
@@ -41,53 +43,54 @@ class AdminPage extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           usersAsync.when(
-            loading: () => const Padding(
-              padding: EdgeInsets.symmetric(vertical: 32),
-              child: Center(child: CircularProgressIndicator()),
+            loading: () => const TableLoadingSkeleton(columnCount: 5, rowCount: 5),
+            error: (e, _) => AsyncErrorCard(
+              error: e,
+              title: 'Не удалось загрузить пользователей',
+              onRetry: () => ref.invalidate(adminUsersProvider),
             ),
-            error: (e, _) => Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: SelectableText(
-                  'Не удалось загрузить пользователей: ${dioErrorMessage(e)}',
-                  style: TextStyle(color: colors.error),
-                ),
-              ),
-            ),
-            data: (page) => Card(
-              child: DataTable(
-                columns: const [
-                  DataColumn(label: Text('ID')),
-                  DataColumn(label: Text('Логин')),
-                  DataColumn(label: Text('Email')),
-                  DataColumn(label: Text('Роли')),
-                  DataColumn(label: Text('Статус')),
-                ],
-                rows: [
-                  for (final u in page.items)
-                    DataRow(
-                      cells: [
-                        DataCell(Text('${u.id}')),
-                        DataCell(Text(u.username)),
-                        DataCell(Text(u.email)),
-                        DataCell(Text(u.roles.isEmpty ? '—' : u.roles.join(', '))),
-                        DataCell(
-                          Chip(
-                            label: const Text(
-                              'Активен',
-                              style: TextStyle(fontSize: 12),
-                            ),
-                            backgroundColor: colors.primary.withAlpha(20),
-                            side: BorderSide.none,
-                            visualDensity: VisualDensity.compact,
-                            padding: EdgeInsets.zero,
+            data: (page) => page.items.isEmpty
+                ? EmptyListState(
+                    icon: Icons.people_outline,
+                    title: 'Пользователей нет',
+                    message: 'В identity не найдено активных пользователей.',
+                    actionLabel: 'Обновить',
+                    onAction: () => ref.invalidate(adminUsersProvider),
+                  )
+                : Card(
+                    child: DataTable(
+                      columns: const [
+                        DataColumn(label: Text('ID')),
+                        DataColumn(label: Text('Логин')),
+                        DataColumn(label: Text('Email')),
+                        DataColumn(label: Text('Роли')),
+                        DataColumn(label: Text('Статус')),
+                      ],
+                      rows: [
+                        for (final u in page.items)
+                          DataRow(
+                            cells: [
+                              DataCell(Text('${u.id}')),
+                              DataCell(Text(u.username)),
+                              DataCell(Text(u.email)),
+                              DataCell(Text(u.roles.isEmpty ? '—' : u.roles.join(', '))),
+                              DataCell(
+                                Chip(
+                                  label: const Text(
+                                    'Активен',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                  backgroundColor: colors.primary.withAlpha(20),
+                                  side: BorderSide.none,
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
                       ],
                     ),
-                ],
-              ),
-            ),
+                  ),
           ),
           const SizedBox(height: 24),
           Text('Роли и права', style: theme.textTheme.titleMedium),

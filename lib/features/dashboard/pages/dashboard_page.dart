@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/async_error_card.dart';
+import '../../../core/widgets/loading_skeletons.dart';
 import '../providers/dashboard_providers.dart';
 
 /// Дашборд: KPI из каталога, заказов и финансов (Traefik).
@@ -21,11 +23,15 @@ class DashboardPage extends ConsumerWidget {
     final async = ref.watch(dashboardSummaryProvider);
 
     return async.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const DashboardLoadingSkeleton(),
       error: (e, _) => Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: SelectableText('Дашборд: $e', style: TextStyle(color: colors.error)),
+          child: AsyncErrorCard(
+            error: e,
+            title: 'Не удалось загрузить дашборд',
+            onRetry: () => ref.invalidate(dashboardSummaryProvider),
+          ),
         ),
       ),
       data: (summary) => RefreshIndicator(

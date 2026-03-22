@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/network/dio_error_mapper.dart';
+import '../../../core/widgets/async_error_card.dart';
 import '../../../core/widgets/bokeh_modal.dart';
+import '../../../core/widgets/empty_list_state.dart';
+import '../../../core/widgets/loading_skeletons.dart';
 import '../providers/finance_providers.dart';
 
 class FinancePage extends ConsumerStatefulWidget {
@@ -97,8 +99,12 @@ class _FinancePageState extends ConsumerState<FinancePage> {
         ),
         const SizedBox(height: 24),
         snap.when(
-          loading: () => const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator())),
-          error: (e, _) => SelectableText('Ошибка: ${dioErrorMessage(e)}'),
+          loading: () => const FinanceLoadingSkeleton(),
+          error: (e, _) => AsyncErrorCard(
+            error: e,
+            title: 'Не удалось загрузить финансы',
+            onRetry: () => ref.invalidate(financeSnapshotProvider),
+          ),
           data: (data) => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -125,10 +131,14 @@ class _FinancePageState extends ConsumerState<FinancePage> {
               const SizedBox(height: 24),
               Text('Транзакции', style: theme.textTheme.titleMedium),
               const SizedBox(height: 12),
-              Card(
-                child: data.transactions.isEmpty
-                    ? const ListTile(title: Text('Нет транзакций'))
-                    : Column(
+              data.transactions.isEmpty
+                  ? EmptyListState(
+                      icon: Icons.payments_outlined,
+                      title: 'Транзакций нет',
+                      message: 'Операции по выбранному client_id пока не найдены.',
+                    )
+                  : Card(
+                      child: Column(
                         children: data.transactions.map((tx) {
                           final amt = tx['amount'];
                           final desc = tx['description']?.toString() ?? '';
@@ -143,7 +153,7 @@ class _FinancePageState extends ConsumerState<FinancePage> {
                           );
                         }).toList(),
                       ),
-              ),
+                    ),
             ],
           ),
         ),

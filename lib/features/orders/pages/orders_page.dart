@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/network/api_services/orders_api_service.dart';
 import '../../../core/network/dio_error_mapper.dart';
 import '../../../core/routing/route_names.dart';
+import '../../../core/widgets/async_error_card.dart';
+import '../../../core/widgets/empty_list_state.dart';
+import '../../../core/widgets/loading_skeletons.dart';
 import '../providers/orders_providers.dart';
 
 class OrdersPage extends ConsumerWidget {
@@ -51,14 +54,14 @@ class OrdersPage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (page.items.isEmpty)
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        'Заказов на этой странице нет (всего ${page.total}).',
-                        style: theme.textTheme.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
-                      ),
-                    ),
+                  EmptyListState(
+                    icon: Icons.receipt_long_outlined,
+                    title: page.total == 0 ? 'Заказов пока нет' : 'На этой странице пусто',
+                    message: page.total == 0
+                        ? 'Создайте первый заказ кнопкой «Новый заказ».'
+                        : 'Всего в системе: ${page.total}. Перейдите на другую страницу списка.',
+                    actionLabel: 'Обновить список',
+                    onAction: () => ref.invalidate(ordersListProvider),
                   )
                 else
                   Card(
@@ -115,18 +118,29 @@ class OrdersPage extends ConsumerWidget {
               ],
             );
           },
-          loading: () => const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator())),
-          error: (e, _) => Card(
-            color: colors.errorContainer,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: SelectableText(
-                'Не удалось загрузить заказы: ${dioErrorMessage(e)}\n\n'
+          loading: () => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const TableLoadingSkeleton(columnCount: 4, rowCount: 5),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const SkeletonLine(width: 160, height: 12),
+                  const Spacer(),
+                  const SkeletonLine(width: 72, height: 36),
+                  const SizedBox(width: 8),
+                  const SkeletonLine(width: 72, height: 36),
+                ],
+              ),
+            ],
+          ),
+          error: (e, _) => AsyncErrorCard(
+            error: e,
+            title: 'Не удалось загрузить заказы',
+            onRetry: () => ref.invalidate(ordersListProvider),
+            hint:
                 'Проверьте, что Traefik и сервис orders запущены, а для Flutter Web задана база API, например:\n'
                 'flutter run -d chrome --dart-define=API_BASE_URL=http://localhost',
-                style: TextStyle(color: colors.onErrorContainer),
-              ),
-            ),
           ),
         ),
       ],

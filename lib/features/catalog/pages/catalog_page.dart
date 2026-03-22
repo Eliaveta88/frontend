@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/network/dio_error_mapper.dart';
 import '../../../core/routing/route_names.dart';
+import '../../../core/widgets/async_error_card.dart';
+import '../../../core/widgets/empty_list_state.dart';
+import '../../../core/widgets/loading_skeletons.dart';
 import '../data/catalog_models.dart';
 import '../providers/catalog_providers.dart';
 
@@ -42,31 +44,47 @@ class CatalogPage extends ConsumerWidget {
     final categoryFilter = ref.watch(catalogCategoryFilterProvider);
 
     return async.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SkeletonLine(width: 160, height: 28),
+                    const SizedBox(height: 8),
+                    const SkeletonLine(width: 220, height: 16),
+                  ],
+                ),
+              ),
+              const SkeletonLine(width: 160, height: 40),
+            ],
+          ),
+          const SizedBox(height: 20),
+          const SkeletonLine(height: 48),
+          const SizedBox(height: 12),
+          Row(
+            children: List.generate(
+              4,
+              (i) => Padding(
+                padding: EdgeInsets.only(right: i < 3 ? 8 : 0),
+                child: SkeletonLine(width: i == 0 ? 120 : 88, height: 32),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const TableLoadingSkeleton(columnCount: 4, rowCount: 6),
+        ],
+      ),
       error: (e, _) => Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.cloud_off, size: 48, color: colors.error),
-              const SizedBox(height: 12),
-              Text(
-                'Не удалось загрузить каталог',
-                style: theme.textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                dioErrorMessage(e),
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () => ref.invalidate(catalogProductsProvider),
-                child: const Text('Повторить'),
-              ),
-            ],
+          child: AsyncErrorCard(
+            error: e,
+            title: 'Не удалось загрузить каталог',
+            onRetry: () => ref.invalidate(catalogProductsProvider),
           ),
         ),
       ),
@@ -157,34 +175,45 @@ class CatalogPage extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              Card(
-                child: DataTable(
-                  showCheckboxColumn: false,
-                  columns: const [
-                    DataColumn(label: Text('Название')),
-                    DataColumn(label: Text('Категория')),
-                    DataColumn(label: Text('Цена')),
-                    DataColumn(label: Text('Наличие')),
-                  ],
-                  rows: filtered.map((p) {
-                    final stockColor = p.inStock ? colors.primary : colors.error;
-                    return DataRow(
-                      onSelectChanged: (_) => context.go('${Routes.catalog}/${p.id}'),
-                      cells: [
-                        DataCell(Text(p.name)),
-                        DataCell(Text(p.category)),
-                        DataCell(Text(_formatPrice(p.price))),
-                        DataCell(
-                          Text(
-                            _stockLabel(p.inStock),
-                            style: TextStyle(color: stockColor, fontWeight: FontWeight.w500),
+              if (filtered.isEmpty)
+                EmptyListState(
+                  icon: page.items.isEmpty ? Icons.inventory_2_outlined : Icons.search_off,
+                  title: page.items.isEmpty ? 'Каталог пуст' : 'Ничего не найдено',
+                  message: page.items.isEmpty
+                      ? 'С сервера не пришло ни одной позиции.'
+                      : 'Измените поиск или фильтр категории.',
+                  actionLabel: page.items.isEmpty ? 'Обновить' : null,
+                  onAction: page.items.isEmpty ? () => ref.invalidate(catalogProductsProvider) : null,
+                )
+              else
+                Card(
+                  child: DataTable(
+                    showCheckboxColumn: false,
+                    columns: const [
+                      DataColumn(label: Text('Название')),
+                      DataColumn(label: Text('Категория')),
+                      DataColumn(label: Text('Цена')),
+                      DataColumn(label: Text('Наличие')),
+                    ],
+                    rows: filtered.map((p) {
+                      final stockColor = p.inStock ? colors.primary : colors.error;
+                      return DataRow(
+                        onSelectChanged: (_) => context.go('${Routes.catalog}/${p.id}'),
+                        cells: [
+                          DataCell(Text(p.name)),
+                          DataCell(Text(p.category)),
+                          DataCell(Text(_formatPrice(p.price))),
+                          DataCell(
+                            Text(
+                              _stockLabel(p.inStock),
+                              style: TextStyle(color: stockColor, fontWeight: FontWeight.w500),
+                            ),
                           ),
-                        ),
-                      ],
-                    );
-                  }).toList(),
+                        ],
+                      );
+                    }).toList(),
+                  ),
                 ),
-              ),
             ],
           ),
         );
