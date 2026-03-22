@@ -76,7 +76,7 @@
 | # | Задача | Статус |
 |---|--------|--------|
 | 5.1 | Кнопки каталога/админа/финансов/логистики | ✅ связано с API |
-| 5.2 | Тесты (widget/integration), CI | ⏳ unit-тесты фронта; **CI** — workflow `ci-frontend.yml` в корневом репо (analyze + test) |
+| 5.2 | Тесты (widget/integration), CI | ⏳ unit-тесты фронта; **CI** — `.github/workflows/ci.yml` в репозитории `GastroRoute_frontend` (analyze + test) |
 | 5.3 | `git push` сабмодулей + bump в корневом репо | по необходимости |
 
 ---
