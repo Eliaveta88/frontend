@@ -64,6 +64,8 @@ class _AnimatedEmojiBackgroundState extends State<AnimatedEmojiBackground>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final emojiOpacityFactor = isDark ? 0.28 : 1.0;
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -72,7 +74,12 @@ class _AnimatedEmojiBackgroundState extends State<AnimatedEmojiBackground>
           builder: (context, _) {
             final overlayColor = Theme.of(context).colorScheme.onSurfaceVariant;
             return CustomPaint(
-              painter: _EmojiPainter(_particles, _ctrl.value, overlayColor),
+              painter: _EmojiPainter(
+                _particles,
+                _ctrl.value,
+                overlayColor,
+                emojiOpacityFactor,
+              ),
               size: Size.infinite,
             );
           },
@@ -106,11 +113,12 @@ class _EmojiParticle {
 }
 
 class _EmojiPainter extends CustomPainter {
-  _EmojiPainter(this.particles, this.t, this.overlayColor);
+  _EmojiPainter(this.particles, this.t, this.overlayColor, this.opacityFactor);
 
   final List<_EmojiParticle> particles;
   final double t;
   final Color overlayColor;
+  final double opacityFactor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -130,8 +138,9 @@ class _EmojiPainter extends CustomPainter {
 
       canvas.save();
       canvas.translate(px, py);
-      final paint =
-          Paint()..color = overlayColor.withAlpha((p.opacity * 255).toInt());
+      final paint = Paint()
+        ..color = overlayColor
+            .withAlpha((p.opacity * opacityFactor * 255).clamp(0, 255).toInt());
       canvas.saveLayer(Rect.fromLTWH(0, 0, tp.width, tp.height), paint);
       tp.paint(canvas, Offset.zero);
       canvas.restore();
@@ -140,5 +149,6 @@ class _EmojiPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_EmojiPainter old) => true;
+  bool shouldRepaint(_EmojiPainter old) =>
+      old.t != t || old.opacityFactor != opacityFactor;
 }

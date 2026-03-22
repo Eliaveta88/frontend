@@ -48,15 +48,17 @@ class AppShell extends ConsumerWidget {
       child: Scaffold(
         backgroundColor: colors.surface,
         appBar: AppBar(
-          backgroundColor: colors.surface.withAlpha(230),
+          backgroundColor: colors.surface,
+          surfaceTintColor: Colors.transparent,
           title: Row(
             children: [
-              Icon(Icons.local_shipping_rounded, color: colors.primary, size: 28),
-              const SizedBox(width: 10),
+              Icon(Icons.local_shipping_rounded, color: colors.primary, size: 26),
+              const SizedBox(width: 12),
               Text(
                 'GastroRoute',
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
                   color: colors.primary,
                 ),
               ),
@@ -110,8 +112,8 @@ class AppShell extends ConsumerWidget {
           children: [
             NavigationRail(
               extended: !isCompact,
-              minExtendedWidth: 200,
-              backgroundColor: colors.surfaceContainerLow.withAlpha(235),
+              minExtendedWidth: 220,
+              backgroundColor: colors.surfaceContainerLow,
               selectedIndex: selected,
               onDestinationSelected: (i) {
                 context.go(_destinations[i].route);
@@ -132,8 +134,8 @@ class AppShell extends ConsumerWidget {
               color: colors.outlineVariant.withAlpha(60),
             ),
             Expanded(
-              child: Container(
-                color: colors.surface.withAlpha(240),
+              child: ColoredBox(
+                color: colors.surface,
                 child: child,
               ),
             ),

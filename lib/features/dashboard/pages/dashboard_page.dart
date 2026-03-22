@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/async_error_card.dart';
 import '../../../core/widgets/loading_skeletons.dart';
 import '../data/activity_feed_item.dart';
@@ -55,13 +56,19 @@ class DashboardPage extends ConsumerWidget {
           ]);
         },
         child: ListView(
-          padding: const EdgeInsets.all(24),
+          padding: AppTheme.pagePadding,
           children: [
-            Text('Дашборд', style: theme.textTheme.headlineMedium),
-            const SizedBox(height: 4),
+            Text(
+              'Дашборд',
+              style: theme.textTheme.headlineMedium?.copyWith(letterSpacing: -0.3),
+            ),
+            const SizedBox(height: 8),
             Text(
               'Ключевые показатели и активность',
-              style: theme.textTheme.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colors.onSurfaceVariant,
+                height: 1.45,
+              ),
             ),
             if (summary.partialErrors.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -81,12 +88,18 @@ class DashboardPage extends ConsumerWidget {
                 ),
               ),
             ],
-            const SizedBox(height: 28),
-            Text('Ключевые показатели', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 16),
+            const SizedBox(height: 32),
+            Text(
+              'Ключевые показатели',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.2,
+              ),
+            ),
+            const SizedBox(height: 20),
             Wrap(
-              spacing: 16,
-              runSpacing: 16,
+              spacing: 20,
+              runSpacing: 20,
               children: [
                 _KpiCard(
                   icon: Icons.receipt_long,
@@ -126,14 +139,23 @@ class DashboardPage extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 32),
-            Text('Последняя активность', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
+            const SizedBox(height: 36),
+            Text(
+              'Последняя активность',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.2,
+              ),
+            ),
+            const SizedBox(height: 10),
             Text(
               'Недавние заказы и операции (данные с API заказов и финансов)',
-              style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colors.onSurfaceVariant,
+                height: 1.4,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             activityAsync.when(
               loading: () => const Card(
                 child: Padding(
@@ -220,22 +242,22 @@ class _KpiCard extends StatelessWidget {
     final colors = theme.colorScheme;
 
     return SizedBox(
-      width: 240,
+      width: 272,
       child: Card(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(11),
                     decoration: BoxDecoration(
-                      color: color.withAlpha(25),
-                      borderRadius: BorderRadius.circular(12),
+                      color: color.withAlpha(28),
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Icon(icon, color: color, size: 22),
+                    child: Icon(icon, color: color, size: 24),
                   ),
                   const Spacer(),
                   if (trend.isNotEmpty)
@@ -255,21 +277,31 @@ class _KpiCard extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
               Text(
                 value,
-                style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.4,
+                  height: 1.15,
+                ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Text(
                 label,
-                style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: colors.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               if (subtitle != null && subtitle!.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Text(
                   subtitle!,
-                  style: theme.textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant.withAlpha(180)),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colors.onSurfaceVariant,
+                    height: 1.35,
+                  ),
                 ),
               ],
             ],

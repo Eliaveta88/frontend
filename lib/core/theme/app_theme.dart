@@ -1,10 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// Темы приложения: светлая — нейтральная; тёмная — **OLED**: фон почти #000, без «зелёного» surface tint.
 class AppTheme {
   AppTheme._();
 
+  /// Единые отступы для списков и форм на широких экранах.
+  static const EdgeInsets pagePadding = EdgeInsets.fromLTRB(28, 28, 28, 36);
+
   static const _seed = Color(0xFF00897B);
+
+  /// Почти идеальный чёрный и ступени «подъёма» для AMOLED (минимальная засветка пикселей).
+  static const _oledSurface = Color(0xFF000000);
+  static const _oledContainerLowest = Color(0xFF000000);
+  static const _oledContainerLow = Color(0xFF070707);
+  static const _oledContainer = Color(0xFF0C0C0C);
+  static const _oledContainerHigh = Color(0xFF121212);
+  static const _oledContainerHighest = Color(0xFF181818);
 
   static ThemeData light() {
     final scheme = ColorScheme.fromSeed(
@@ -20,32 +32,96 @@ class AppTheme {
       brightness: Brightness.dark,
     );
     final scheme = baseScheme.copyWith(
-      surface: const Color(0xFF0B1013),
-      surfaceContainerLowest: const Color(0xFF0E1418),
-      surfaceContainerLow: const Color(0xFF11191F),
-      surfaceContainer: const Color(0xFF152026),
-      surfaceContainerHigh: const Color(0xFF1A2630),
-      surfaceContainerHighest: const Color(0xFF1F2D38),
+      surface: _oledSurface,
+      surfaceDim: _oledContainerLow,
+      surfaceBright: _oledContainerHigh,
+      surfaceContainerLowest: _oledContainerLowest,
+      surfaceContainerLow: _oledContainerLow,
+      surfaceContainer: _oledContainer,
+      surfaceContainerHigh: _oledContainerHigh,
+      surfaceContainerHighest: _oledContainerHighest,
+      surfaceTint: Colors.transparent,
+      outline: const Color(0xFF383838),
+      outlineVariant: const Color(0xFF2A2A2A),
+      shadow: Colors.black,
+      scrim: Color(0xCC000000),
     );
     return _build(scheme);
   }
 
+  static TextTheme _typography(TextTheme base, ColorScheme scheme) {
+    final on = scheme.onSurface;
+    final onVar = scheme.onSurfaceVariant;
+    TextStyle? t(TextStyle? s, {
+      double? fontSize,
+      double? height,
+      FontWeight? fontWeight,
+      double? letterSpacing,
+      Color? color,
+    }) {
+      return s?.copyWith(
+        fontSize: fontSize,
+        height: height,
+        fontWeight: fontWeight,
+        letterSpacing: letterSpacing,
+        color: color ?? s.color ?? on,
+      );
+    }
+
+    return base.copyWith(
+      displayLarge: t(base.displayLarge,
+          fontSize: 57, height: 1.12, fontWeight: FontWeight.w400, letterSpacing: -0.25),
+      displayMedium: t(base.displayMedium,
+          fontSize: 45, height: 1.16, fontWeight: FontWeight.w400, letterSpacing: 0),
+      displaySmall: t(base.displaySmall,
+          fontSize: 36, height: 1.22, fontWeight: FontWeight.w400, letterSpacing: 0),
+      headlineLarge: t(base.headlineLarge,
+          fontSize: 32, height: 1.25, fontWeight: FontWeight.w600, letterSpacing: 0),
+      headlineMedium: t(base.headlineMedium,
+          fontSize: 28, height: 1.29, fontWeight: FontWeight.w600, letterSpacing: 0),
+      headlineSmall: t(base.headlineSmall,
+          fontSize: 24, height: 1.33, fontWeight: FontWeight.w600, letterSpacing: 0),
+      titleLarge: t(base.titleLarge,
+          fontSize: 22, height: 1.27, fontWeight: FontWeight.w600, letterSpacing: 0),
+      titleMedium: t(base.titleMedium,
+          fontSize: 16, height: 1.5, fontWeight: FontWeight.w600, letterSpacing: 0.15),
+      titleSmall: t(base.titleSmall,
+          fontSize: 14, height: 1.43, fontWeight: FontWeight.w600, letterSpacing: 0.1),
+      bodyLarge: t(base.bodyLarge,
+          fontSize: 16, height: 1.5, fontWeight: FontWeight.w400, letterSpacing: 0.15),
+      bodyMedium: t(base.bodyMedium,
+          fontSize: 14, height: 1.43, fontWeight: FontWeight.w400, letterSpacing: 0.25),
+      bodySmall: t(base.bodySmall,
+          fontSize: 12, height: 1.33, fontWeight: FontWeight.w400, letterSpacing: 0.4, color: onVar),
+      labelLarge: t(base.labelLarge,
+          fontSize: 14, height: 1.43, fontWeight: FontWeight.w600, letterSpacing: 0.1),
+      labelMedium: t(base.labelMedium,
+          fontSize: 12, height: 1.33, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+      labelSmall: t(base.labelSmall,
+          fontSize: 11, height: 1.45, fontWeight: FontWeight.w500, letterSpacing: 0.5),
+    );
+  }
+
   static ThemeData _build(ColorScheme scheme) {
     final isLight = scheme.brightness == Brightness.light;
-    final base = GoogleFonts.interTextTheme(
+    final baseRaw = GoogleFonts.plusJakartaSansTextTheme(
       isLight ? ThemeData.light().textTheme : ThemeData.dark().textTheme,
     );
+    final base = _typography(baseRaw, scheme);
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
       textTheme: base,
+      visualDensity: VisualDensity.standard,
       scaffoldBackgroundColor: scheme.surface,
       appBarTheme: AppBarTheme(
         centerTitle: false,
         elevation: 0,
-        scrolledUnderElevation: 1,
+        scrolledUnderElevation: 0,
+        toolbarHeight: 64,
         backgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
         foregroundColor: scheme.onSurface,
         titleTextStyle: base.titleLarge?.copyWith(
           color: scheme.onSurface,
@@ -55,10 +131,11 @@ class AppTheme {
       cardTheme: CardThemeData(
         elevation: 0,
         margin: EdgeInsets.zero,
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
-            color: scheme.outlineVariant.withAlpha(80),
+            color: scheme.outlineVariant.withAlpha(isLight ? 80 : 100),
           ),
         ),
         color: isLight ? scheme.surface : scheme.surfaceContainerLow,
@@ -68,12 +145,13 @@ class AppTheme {
             ? scheme.surfaceContainerLowest
             : scheme.surfaceContainerLow,
         indicatorColor: scheme.primaryContainer,
+        minExtendedWidth: 220,
         selectedIconTheme:
             IconThemeData(color: scheme.onPrimaryContainer, size: 24),
         unselectedIconTheme:
             IconThemeData(color: scheme.onSurfaceVariant, size: 24),
         labelType: NavigationRailLabelType.all,
-        selectedLabelTextStyle: base.labelMedium?.copyWith(
+        selectedLabelTextStyle: base.labelLarge?.copyWith(
           color: scheme.onSurface,
           fontWeight: FontWeight.w600,
         ),
@@ -81,14 +159,21 @@ class AppTheme {
           color: scheme.onSurfaceVariant,
         ),
       ),
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+        minVerticalPadding: 12,
+        titleTextStyle: base.titleSmall?.copyWith(color: scheme.onSurface),
+        subtitleTextStyle: base.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+      ),
       dialogTheme: DialogThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         elevation: 8,
         backgroundColor: scheme.surfaceContainerHigh,
+        surfaceTintColor: Colors.transparent,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: scheme.surfaceContainerHighest.withAlpha(100),
+        fillColor: scheme.surfaceContainerHighest.withAlpha(isLight ? 100 : 140),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -106,12 +191,13 @@ class AppTheme {
           borderSide: BorderSide(color: scheme.error),
         ),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         hintStyle: base.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size(120, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -121,6 +207,7 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(120, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -129,7 +216,8 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          minimumSize: const Size(80, 40),
+          minimumSize: const Size(80, 44),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -138,6 +226,7 @@ class AppTheme {
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         side: BorderSide(color: scheme.outlineVariant.withAlpha(80)),
+        labelStyle: base.labelMedium,
       ),
       dataTableTheme: DataTableThemeData(
         headingRowColor: WidgetStatePropertyAll(
@@ -148,6 +237,8 @@ class AppTheme {
           fontWeight: FontWeight.w600,
         ),
         dataTextStyle: base.bodyMedium?.copyWith(color: scheme.onSurface),
+        horizontalMargin: 20,
+        columnSpacing: 20,
         dividerThickness: 0.6,
       ),
       snackBarTheme: SnackBarThemeData(
@@ -165,17 +256,21 @@ class AppTheme {
           borderRadius: BorderRadius.circular(8),
         ),
         textStyle: base.bodySmall?.copyWith(color: scheme.onInverseSurface),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
       searchBarTheme: SearchBarThemeData(
         elevation: const WidgetStatePropertyAll(0),
         backgroundColor: WidgetStatePropertyAll(
-          scheme.surfaceContainerHighest.withAlpha(100),
+          scheme.surfaceContainerHighest.withAlpha(isLight ? 100 : 120),
         ),
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         side: WidgetStatePropertyAll(
           BorderSide(color: scheme.outlineVariant.withAlpha(60)),
+        ),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: 12),
         ),
       ),
     );
