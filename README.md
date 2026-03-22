@@ -58,7 +58,7 @@ flutter run -d chrome --dart-define=AUTH_ENABLED=true --dart-define=API_BASE_URL
 | Экран | Запросы |
 |-------|---------|
 | Шапка | Поиск по каталогу: autocomplete → переход к карточке товара |
-| Дашборд | KPI: каталог, заказы, финансы, логистика (`in_progress`), pull-to-refresh |
+| Дашборд | KPI; выручка за день — `GET .../finance/accounts/{id}/revenue?from=&to=`; лента из заказов и транзакций; pull-to-refresh |
 | Каталог | `GET .../catalog/api/v1/catalog/products`, карточка товара по id |
 | Заказы | Список и детали через `/orders/api/v1/orders` |
 | Склад | `GET .../warehouse/api/v1/warehouse` — остатки |
