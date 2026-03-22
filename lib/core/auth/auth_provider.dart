@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../network/api_services/identity_api_service.dart';
+import '../persistence/shared_preferences_provider.dart';
 import '../../features/finance/providers/finance_providers.dart';
 import 'auth_state.dart';
+import 'auth_token_storage.dart';
 import 'user_profile.dart';
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
@@ -11,9 +15,43 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
 );
 
 class AuthNotifier extends StateNotifier<AuthState> {
-  AuthNotifier(this._ref) : super(const AuthState());
+  AuthNotifier(this._ref) : super(const AuthState()) {
+    _restoreFromStorage();
+  }
 
   final Ref _ref;
+
+  void _restoreFromStorage() {
+    final prefs = _ref.read(sharedPreferencesProvider);
+    final access = prefs.getString(AuthTokenStorage.accessKey);
+    final refresh = prefs.getString(AuthTokenStorage.refreshKey);
+    if (access == null ||
+        refresh == null ||
+        access.isEmpty ||
+        refresh.isEmpty) {
+      return;
+    }
+    state = AuthState(accessToken: access, refreshToken: refresh);
+    Future.microtask(() => refreshProfile());
+  }
+
+  void _schedulePersist() {
+    unawaited(_persistTokens());
+  }
+
+  Future<void> _persistTokens() async {
+    final prefs = _ref.read(sharedPreferencesProvider);
+    final access = state.accessToken;
+    final refresh = state.refreshToken;
+    if (access == null ||
+        refresh == null ||
+        access.isEmpty ||
+        refresh.isEmpty) {
+      await AuthTokenStorage.clear(prefs);
+      return;
+    }
+    await AuthTokenStorage.save(prefs, access: access, refresh: refresh);
+  }
 
   static const int _defaultFinanceClientId = 1;
 
@@ -43,6 +81,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (profile != null) {
         _ref.read(financeClientIdProvider.notifier).state = profile.id;
       }
+      _schedulePersist();
     } on DioException catch (e) {
       state = const AuthState();
       final msg = e.response?.data;
@@ -116,6 +155,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
     state = const AuthState();
     _ref.read(financeClientIdProvider.notifier).state = _defaultFinanceClientId;
+    await AuthTokenStorage.clear(_ref.read(sharedPreferencesProvider));
   }
 
   void setTokens({required String access, required String refresh}) {
@@ -124,10 +164,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       refreshToken: refresh,
       profile: state.profile,
     );
+    _schedulePersist();
   }
 
   void clearTokens() {
     state = const AuthState();
     _ref.read(financeClientIdProvider.notifier).state = _defaultFinanceClientId;
+    unawaited(AuthTokenStorage.clear(_ref.read(sharedPreferencesProvider)));
   }
 }
