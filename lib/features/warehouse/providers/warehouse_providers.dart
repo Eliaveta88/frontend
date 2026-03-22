@@ -5,5 +5,5 @@ import '../data/warehouse_models.dart';
 
 final warehouseStockProvider = FutureProvider.autoDispose<StockListPage>((ref) async {
   final api = ref.watch(warehouseApiServiceProvider);
-  return api.listStock(skip: 0, limit: 200);
+  return api.listStock(skip: 0, limit: 100);
 });

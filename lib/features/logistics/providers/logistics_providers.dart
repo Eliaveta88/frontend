@@ -5,5 +5,5 @@ import '../data/logistics_models.dart';
 
 final logisticsRoutesProvider = FutureProvider.autoDispose<RouteListPage>((ref) async {
   final api = ref.watch(logisticsApiServiceProvider);
-  return api.listRoutes(skip: 0, limit: 200);
+  return api.listRoutes(skip: 0, limit: 100);
 });
