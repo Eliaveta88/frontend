@@ -46,12 +46,8 @@
 
 ### C.1 Логистика — «Новый рейс»
 
-- **Сейчас:** в `GastroRoute_logistics` есть только `GET` списка маршрутов, **нет** `POST` создания рейса.
-- **План:**  
-  1. **Бэкенд:** контракт `POST /api/v1/logistics` (или `/routes`) с телом создания маршрута + минимальные поля (водитель, точки, статус).  
-  2. **Фронт:** `LogisticsApiService.createRoute`, кнопка открывает форму → POST → `invalidate(logisticsRoutesProvider)`.
-
-**Временно (опционально):** кнопка открывает SnackBar «Функция появится в следующем обновлении» — **не** рекомендуется как продукт; лучше скрыть кнопку до готовности API.
+- **Сделано:** `POST /logistics/api/v1/logistics` с телом `PlanRouteRequest` (vehicle_id, driver_id, driver_name, start_time, points[]).  
+- **Фронт:** `LogisticsApiService.createRoute`, диалог «Новый рейс» → `invalidate(logisticsRoutesProvider)`.
 
 ---
 
