@@ -32,7 +32,7 @@ class OrdersPage extends ConsumerWidget {
                   Text('Заказы', style: theme.textTheme.headlineMedium),
                   const SizedBox(height: 4),
                   Text(
-                    'Данные с сервиса orders через Traefik',
+                    'Список заказов и статусы',
                     style: theme.textTheme.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
                   ),
                 ],
@@ -138,9 +138,7 @@ class OrdersPage extends ConsumerWidget {
             error: e,
             title: 'Не удалось загрузить заказы',
             onRetry: () => ref.invalidate(ordersListProvider),
-            hint:
-                'Проверьте, что Traefik и сервис orders запущены, а для Flutter Web задана база API, например:\n'
-                'flutter run -d chrome --dart-define=API_BASE_URL=http://localhost',
+            hint: 'Проверьте подключение к сети и повторите попытку.',
           ),
         ),
       ],

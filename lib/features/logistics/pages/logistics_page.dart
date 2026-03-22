@@ -31,7 +31,6 @@ class LogisticsPage extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SkeletonLine(width: 130, height: 40),
             ],
           ),
           const SizedBox(height: 24),
@@ -73,11 +72,6 @@ class LogisticsPage extends ConsumerWidget {
                     ],
                   ),
                 ),
-                FilledButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.add),
-                  label: const Text('Новый рейс'),
-                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -87,7 +81,7 @@ class LogisticsPage extends ConsumerWidget {
               EmptyListState(
                 icon: Icons.local_shipping_outlined,
                 title: 'Маршрутов нет',
-                message: 'Создайте рейс в сервисе logistics или обновите список.',
+                message: 'Создайте рейс или обновите список.',
                 actionLabel: 'Обновить',
                 onAction: () => ref.invalidate(logisticsRoutesProvider),
               )

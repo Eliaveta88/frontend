@@ -5,7 +5,7 @@ import '../../../core/widgets/async_error_card.dart';
 import '../../../core/widgets/loading_skeletons.dart';
 import '../providers/dashboard_providers.dart';
 
-/// Дашборд: KPI из каталога, заказов и финансов (Traefik).
+/// Дашборд: ключевые показатели по заказам, каталогу и финансам.
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
 
@@ -76,7 +76,7 @@ class DashboardPage extends ConsumerWidget {
                 _KpiCard(
                   icon: Icons.receipt_long,
                   label: 'Заказы сегодня',
-                  subtitle: 'по дате создания (серверный подсчёт за локальный день)',
+                  subtitle: 'Созданные за сегодняшний день',
                   value: _fmtInt(summary.ordersToday),
                   trend: '',
                   trendUp: true,
@@ -94,7 +94,7 @@ class DashboardPage extends ConsumerWidget {
                 _KpiCard(
                   icon: Icons.account_balance,
                   label: 'Выручка за день',
-                  subtitle: 'сумма completed-транзакций за сегодня (client_id из финансов)',
+                  subtitle: 'По завершённым оплатам за сегодня',
                   value: _fmtMoney(summary.revenueTodayRub),
                   trend: '',
                   trendUp: true,
@@ -103,7 +103,7 @@ class DashboardPage extends ConsumerWidget {
                 _KpiCard(
                   icon: Icons.local_shipping,
                   label: 'Рейсов в пути',
-                  subtitle: 'маршруты in_progress (первая страница списка)',
+                  subtitle: 'Маршруты в работе',
                   value: _fmtInt(summary.routesInProgress),
                   trend: '',
                   trendUp: true,

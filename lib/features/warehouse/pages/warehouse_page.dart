@@ -69,7 +69,7 @@ class WarehousePage extends ConsumerWidget {
                       Text('Склад', style: theme.textTheme.headlineMedium),
                       const SizedBox(height: 4),
                       Text(
-                        'Остатки по данным warehouse API (${page.total} поз.)',
+                        'Остатки на складе (${page.total} поз.)',
                         style: theme.textTheme.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
                       ),
                     ],

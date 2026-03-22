@@ -7,9 +7,9 @@ String dioErrorMessage(Object error) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-        return 'Таймаут сети. Проверьте, что Traefik и сервисы запущены.';
+        return 'Сервер не отвечает вовремя. Проверьте подключение к сети и повторите попытку.';
       case DioExceptionType.connectionError:
-        return 'Нет соединения с сервером${error.message != null ? ': ${error.message}' : ''}.';
+        return 'Нет соединения с сервером${error.message != null ? ': ${error.message}' : ''}. Проверьте сеть.';
       case DioExceptionType.badResponse:
         final code = error.response?.statusCode;
         final data = error.response?.data;

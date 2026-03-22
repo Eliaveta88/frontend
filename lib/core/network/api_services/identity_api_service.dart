@@ -69,7 +69,7 @@ class IdentityApiService {
     return data;
   }
 
-  /// Список пользователей (публичный GET для админки в dev).
+  /// Список пользователей (для экрана администрирования).
   Future<Map<String, dynamic>> listUsers({int skip = 0, int limit = 100}) async {
     final response = await _raw.get<Map<String, dynamic>>(ApiPaths.identityUsersList(skip: skip, limit: limit));
     final data = response.data;
