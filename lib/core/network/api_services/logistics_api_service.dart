@@ -58,5 +58,5 @@ class LogisticsApiService {
 }
 
 final logisticsApiServiceProvider = Provider<LogisticsApiService>((ref) {
-  return LogisticsApiService(ref.watch(rawDioProvider));
+  return LogisticsApiService(ref.watch(dioProvider));
 });

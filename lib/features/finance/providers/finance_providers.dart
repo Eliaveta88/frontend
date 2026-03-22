@@ -20,13 +20,13 @@ final financeClientIdProvider = StateProvider<int>((ref) => 1);
 
 final financeSnapshotProvider = FutureProvider.autoDispose<FinanceSnapshot>((ref) async {
   final clientId = ref.watch(financeClientIdProvider);
-  final raw = ref.watch(rawDioProvider);
+  final dio = ref.watch(dioProvider);
 
   Map<String, dynamic>? balance;
   String? balanceErr;
 
   try {
-    final br = await raw.get<Map<String, dynamic>>(ApiPaths.financeBalance(clientId));
+    final br = await dio.get<Map<String, dynamic>>(ApiPaths.financeBalance(clientId));
     if (br.statusCode == 200 && br.data != null) {
       balance = br.data;
     }
@@ -40,7 +40,7 @@ final financeSnapshotProvider = FutureProvider.autoDispose<FinanceSnapshot>((ref
 
   List<Map<String, dynamic>> txs = [];
   try {
-    final tr = await raw.get<Map<String, dynamic>>(ApiPaths.financeTransactions(clientId));
+    final tr = await dio.get<Map<String, dynamic>>(ApiPaths.financeTransactions(clientId));
     final data = tr.data;
     if (data != null) {
       final items = data['items'] as List<dynamic>? ?? [];

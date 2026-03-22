@@ -63,5 +63,5 @@ class CatalogApiService {
 }
 
 final catalogApiServiceProvider = Provider<CatalogApiService>((ref) {
-  return CatalogApiService(ref.watch(rawDioProvider));
+  return CatalogApiService(ref.watch(dioProvider));
 });

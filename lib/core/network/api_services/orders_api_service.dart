@@ -66,5 +66,5 @@ class OrdersApiService {
 }
 
 final ordersApiServiceProvider = Provider<OrdersApiService>((ref) {
-  return OrdersApiService(ref.watch(rawDioProvider));
+  return OrdersApiService(ref.watch(dioProvider));
 });

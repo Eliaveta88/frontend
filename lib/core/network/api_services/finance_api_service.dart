@@ -61,5 +61,5 @@ class FinanceApiService {
 }
 
 final financeApiServiceProvider = Provider<FinanceApiService>((ref) {
-  return FinanceApiService(ref.watch(rawDioProvider));
+  return FinanceApiService(ref.watch(dioProvider));
 });

@@ -37,7 +37,7 @@ class DashboardSummary {
 }
 
 final dashboardSummaryProvider = FutureProvider.autoDispose<DashboardSummary>((ref) async {
-  final raw = ref.watch(rawDioProvider);
+  final dio = ref.watch(dioProvider);
   final clientId = ref.watch(financeClientIdProvider);
 
   int? catalogTotal;
@@ -49,7 +49,7 @@ final dashboardSummaryProvider = FutureProvider.autoDispose<DashboardSummary>((r
 
   Future<void> loadCatalog() async {
     try {
-      final r = await raw.get<Map<String, dynamic>>(ApiPaths.catalogProducts(skip: 0, limit: 1));
+      final r = await dio.get<Map<String, dynamic>>(ApiPaths.catalogProducts(skip: 0, limit: 1));
       final data = r.data;
       if (data != null) {
         catalogTotal = (data['total'] as num?)?.toInt();
@@ -61,7 +61,7 @@ final dashboardSummaryProvider = FutureProvider.autoDispose<DashboardSummary>((r
 
   Future<void> loadOrders() async {
     try {
-      final rAll = await raw.get<Map<String, dynamic>>(ApiPaths.ordersList(skip: 0, limit: 1));
+      final rAll = await dio.get<Map<String, dynamic>>(ApiPaths.ordersList(skip: 0, limit: 1));
       final dataAll = rAll.data;
       if (dataAll != null) {
         ordersTotal = (dataAll['total'] as num?)?.toInt();
@@ -69,7 +69,7 @@ final dashboardSummaryProvider = FutureProvider.autoDispose<DashboardSummary>((r
       final now = DateTime.now();
       final startLocal = DateTime(now.year, now.month, now.day);
       final endLocal = startLocal.add(const Duration(days: 1));
-      final rToday = await raw.get<Map<String, dynamic>>(
+      final rToday = await dio.get<Map<String, dynamic>>(
         ApiPaths.ordersList(
           skip: 0,
           limit: 1,
@@ -88,7 +88,7 @@ final dashboardSummaryProvider = FutureProvider.autoDispose<DashboardSummary>((r
 
   Future<void> loadFinanceToday() async {
     try {
-      final r = await raw.get<Map<String, dynamic>>(
+      final r = await dio.get<Map<String, dynamic>>(
         ApiPaths.financeTransactions(clientId, skip: 0, limit: 100),
       );
       final data = r.data;
@@ -120,7 +120,7 @@ final dashboardSummaryProvider = FutureProvider.autoDispose<DashboardSummary>((r
 
   Future<void> loadLogistics() async {
     try {
-      final r = await raw.get<Map<String, dynamic>>(
+      final r = await dio.get<Map<String, dynamic>>(
         ApiPaths.logisticsRoutes(skip: 0, limit: 1, status: 'in_progress'),
       );
       final data = r.data;

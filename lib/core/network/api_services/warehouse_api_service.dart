@@ -47,5 +47,5 @@ class WarehouseApiService {
 }
 
 final warehouseApiServiceProvider = Provider<WarehouseApiService>((ref) {
-  return WarehouseApiService(ref.watch(rawDioProvider));
+  return WarehouseApiService(ref.watch(dioProvider));
 });
