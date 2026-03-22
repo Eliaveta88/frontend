@@ -47,7 +47,7 @@ void main() {
           requestOptions: RequestOptions(path: '/x'),
           type: t,
         );
-        expect(dioErrorMessage(e), contains('Таймаут'));
+        expect(dioErrorMessage(e), contains('Сервер не отвечает вовремя'));
       }
     });
 
