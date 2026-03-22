@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/async_error_card.dart';
 import '../../../core/widgets/loading_skeletons.dart';
+import '../data/activity_feed_item.dart';
+import '../providers/dashboard_activity_provider.dart';
 import '../providers/dashboard_providers.dart';
 
 /// Дашборд: ключевые показатели по заказам, каталогу и финансам.
@@ -16,11 +18,20 @@ class DashboardPage extends ConsumerWidget {
     return '₽ ${v.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ')}';
   }
 
+  static String _fmtActivityTime(DateTime d) {
+    final dd = d.day.toString().padLeft(2, '0');
+    final mm = d.month.toString().padLeft(2, '0');
+    final hh = d.hour.toString().padLeft(2, '0');
+    final min = d.minute.toString().padLeft(2, '0');
+    return '$dd.$mm $hh:$min';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final async = ref.watch(dashboardSummaryProvider);
+    final activityAsync = ref.watch(dashboardActivityProvider);
 
     return async.when(
       loading: () => const DashboardLoadingSkeleton(),
@@ -37,7 +48,11 @@ class DashboardPage extends ConsumerWidget {
       data: (summary) => RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(dashboardSummaryProvider);
-          await ref.read(dashboardSummaryProvider.future);
+          ref.invalidate(dashboardActivityProvider);
+          await Future.wait([
+            ref.read(dashboardSummaryProvider.future),
+            ref.read(dashboardActivityProvider.future),
+          ]);
         },
         child: ListView(
           padding: const EdgeInsets.all(24),
@@ -94,7 +109,7 @@ class DashboardPage extends ConsumerWidget {
                 _KpiCard(
                   icon: Icons.account_balance,
                   label: 'Выручка за день',
-                  subtitle: 'По завершённым оплатам за сегодня',
+                  subtitle: 'Завершённые оплаты за сегодня (сумма на сервере)',
                   value: _fmtMoney(summary.revenueTodayRub),
                   trend: '',
                   trendUp: true,
@@ -113,30 +128,65 @@ class DashboardPage extends ConsumerWidget {
             ),
             const SizedBox(height: 32),
             Text('Последняя активность', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Недавние заказы и операции (данные с API заказов и финансов)',
+              style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+            ),
             const SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Сводка',
-                      style: theme.textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Всего заказов в системе: ${_fmtInt(summary.ordersTotal)}',
-                      style: theme.textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Лента событий (заказы/склад) — в следующих итерациях.',
-                      style: theme.textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
-                    ),
-                  ],
+            activityAsync.when(
+              loading: () => const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Center(child: CircularProgressIndicator()),
                 ),
               ),
+              error: (e, _) => Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Не удалось загрузить ленту',
+                    style: theme.textTheme.bodyMedium?.copyWith(color: colors.error),
+                  ),
+                ),
+              ),
+              data: (items) {
+                if (items.isEmpty) {
+                  return Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        'Пока нет событий. Всего заказов в системе: ${_fmtInt(summary.ordersTotal)}',
+                        style: theme.textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
+                      ),
+                    ),
+                  );
+                }
+                return Card(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final item in items)
+                        ListTile(
+                          leading: Icon(
+                            item.kind == ActivityFeedKind.order
+                                ? Icons.receipt_long
+                                : Icons.payments_outlined,
+                            color: colors.primary,
+                          ),
+                          title: Text(item.title),
+                          subtitle: Text(item.subtitle),
+                          trailing: Text(
+                            _fmtActivityTime(item.at),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: colors.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
             ),
           ],
         ),
