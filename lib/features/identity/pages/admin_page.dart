@@ -1,92 +1,111 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class AdminPage extends StatelessWidget {
+import '../../../core/network/dio_error_mapper.dart';
+import '../providers/admin_users_provider.dart';
+
+class AdminPage extends ConsumerWidget {
   const AdminPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final usersAsync = ref.watch(adminUsersProvider);
 
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        Text('Администрирование', style: theme.textTheme.headlineMedium),
-        const SizedBox(height: 4),
-        Text(
-          'Пользователи, роли и доступ',
-          style: theme.textTheme.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
-        ),
-        const SizedBox(height: 24),
-        Row(
-          children: [
-            Expanded(child: Text('Сотрудники', style: theme.textTheme.titleMedium)),
-            FilledButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.person_add),
-              label: const Text('Добавить'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Card(
-          child: DataTable(
-            columns: const [
-              DataColumn(label: Text('Сотрудник')),
-              DataColumn(label: Text('Email')),
-              DataColumn(label: Text('Роль')),
-              DataColumn(label: Text('Статус')),
-            ],
-            rows: [
-              _userRow('Смирнов А.В.', 'smirnov@gastro.ru', 'Администратор', true, colors),
-              _userRow('Козлова И.М.', 'kozlova@gastro.ru', 'Менеджер продаж', true, colors),
-              _userRow('Иванов С.П.', 'ivanov@gastro.ru', 'Водитель', true, colors),
-              _userRow('Петров А.И.', 'petrov@gastro.ru', 'Кладовщик', true, colors),
-              _userRow('Сидоров К.В.', 'sidorov@gastro.ru', 'Водитель', false, colors),
-              _userRow('Белова М.Н.', 'belova@gastro.ru', 'Бухгалтер', true, colors),
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(adminUsersProvider);
+        await ref.read(adminUsersProvider.future);
+      },
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        children: [
+          Text('Администрирование', style: theme.textTheme.headlineMedium),
+          const SizedBox(height: 4),
+          Text(
+            'Пользователи, роли и доступ',
+            style: theme.textTheme.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(child: Text('Сотрудники', style: theme.textTheme.titleMedium)),
+              FilledButton.icon(
+                onPressed: () {},
+                icon: const Icon(Icons.person_add),
+                label: const Text('Добавить'),
+              ),
             ],
           ),
-        ),
-        const SizedBox(height: 24),
-        Text('Роли и права', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            _RoleCard(role: 'Администратор', perms: 'Полный доступ', count: 1, colors: colors),
-            _RoleCard(role: 'Менеджер продаж', perms: 'Заказы, каталог, финансы', count: 3, colors: colors),
-            _RoleCard(role: 'Кладовщик', perms: 'Склад, каталог', count: 2, colors: colors),
-            _RoleCard(role: 'Водитель', perms: 'Логистика (свои рейсы)', count: 8, colors: colors),
-            _RoleCard(role: 'Бухгалтер', perms: 'Финансы, отчёты', count: 1, colors: colors),
-          ],
-        ),
-      ],
-    );
-  }
-
-  DataRow _userRow(String name, String email, String role, bool active, ColorScheme colors) {
-    return DataRow(cells: [
-      DataCell(Text(name)),
-      DataCell(Text(email)),
-      DataCell(Text(role)),
-      DataCell(
-        Chip(
-          label: Text(
-            active ? 'Активен' : 'Заблокирован',
-            style: TextStyle(
-              fontSize: 12,
-              color: active ? colors.primary : colors.error,
+          const SizedBox(height: 12),
+          usersAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 32),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (e, _) => Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: SelectableText(
+                  'Не удалось загрузить пользователей: ${dioErrorMessage(e)}',
+                  style: TextStyle(color: colors.error),
+                ),
+              ),
+            ),
+            data: (page) => Card(
+              child: DataTable(
+                columns: const [
+                  DataColumn(label: Text('ID')),
+                  DataColumn(label: Text('Логин')),
+                  DataColumn(label: Text('Email')),
+                  DataColumn(label: Text('Роли')),
+                  DataColumn(label: Text('Статус')),
+                ],
+                rows: [
+                  for (final u in page.items)
+                    DataRow(
+                      cells: [
+                        DataCell(Text('${u.id}')),
+                        DataCell(Text(u.username)),
+                        DataCell(Text(u.email)),
+                        DataCell(Text(u.roles.isEmpty ? '—' : u.roles.join(', '))),
+                        DataCell(
+                          Chip(
+                            label: const Text(
+                              'Активен',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                            backgroundColor: colors.primary.withAlpha(20),
+                            side: BorderSide.none,
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
             ),
           ),
-          backgroundColor:
-              (active ? colors.primary : colors.error).withAlpha(20),
-          side: BorderSide.none,
-          visualDensity: VisualDensity.compact,
-          padding: EdgeInsets.zero,
-        ),
+          const SizedBox(height: 24),
+          Text('Роли и права', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _RoleCard(role: 'Администратор', perms: 'Полный доступ', count: 1, colors: colors),
+              _RoleCard(role: 'Менеджер продаж', perms: 'Заказы, каталог, финансы', count: 3, colors: colors),
+              _RoleCard(role: 'Кладовщик', perms: 'Склад, каталог', count: 2, colors: colors),
+              _RoleCard(role: 'Водитель', perms: 'Логистика (свои рейсы)', count: 8, colors: colors),
+              _RoleCard(role: 'Бухгалтер', perms: 'Финансы, отчёты', count: 1, colors: colors),
+            ],
+          ),
+        ],
       ),
-    ]);
+    );
   }
 }
 
