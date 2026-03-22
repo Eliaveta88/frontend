@@ -27,8 +27,25 @@ abstract final class ApiPaths {
       '/finance/api/v1/finance/accounts/$clientId/balance';
 
   /// Список заказов (Traefik stripPrefix `/orders` → сервис видит `/api/v1/...`).
-  static String ordersList({int skip = 0, int limit = 50}) =>
-      '/orders/api/v1/orders?skip=$skip&limit=$limit';
+  static String ordersList({
+    int skip = 0,
+    int limit = 50,
+    String? createdFromIso,
+    String? createdToIso,
+  }) {
+    final params = <String, String>{
+      'skip': '$skip',
+      'limit': '$limit',
+    };
+    if (createdFromIso != null) {
+      params['created_from'] = createdFromIso;
+    }
+    if (createdToIso != null) {
+      params['created_to'] = createdToIso;
+    }
+    final q = Uri(queryParameters: params).query;
+    return '/orders/api/v1/orders?$q';
+  }
 
   /// POST создание заказа (тот же префикс, без query).
   static const ordersCreate = '/orders/api/v1/orders';

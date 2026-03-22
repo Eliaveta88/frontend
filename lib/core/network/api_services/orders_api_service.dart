@@ -11,8 +11,20 @@ class OrdersApiService {
 
   final Dio _dio;
 
-  Future<OrderListPage> listOrders({int skip = 0, int limit = 50}) async {
-    final r = await _dio.get<Map<String, dynamic>>(ApiPaths.ordersList(skip: skip, limit: limit));
+  Future<OrderListPage> listOrders({
+    int skip = 0,
+    int limit = 50,
+    DateTime? createdFromUtc,
+    DateTime? createdToUtc,
+  }) async {
+    final r = await _dio.get<Map<String, dynamic>>(
+      ApiPaths.ordersList(
+        skip: skip,
+        limit: limit,
+        createdFromIso: createdFromUtc?.toUtc().toIso8601String(),
+        createdToIso: createdToUtc?.toUtc().toIso8601String(),
+      ),
+    );
     final data = r.data;
     if (data == null) {
       throw Exception('Пустой ответ списка заказов');

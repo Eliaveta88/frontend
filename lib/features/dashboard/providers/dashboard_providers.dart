@@ -23,7 +23,7 @@ class DashboardSummary {
   /// Всего заказов в системе.
   final int? ordersTotal;
 
-  /// Заказов с `created_at` за сегодня (по первой странице списка, до `limit`).
+  /// Заказов с `created_at` за календарный сегодня (локальная дата → `total` с API с фильтром).
   final int? ordersToday;
 
   /// Сумма проведённых (`completed`) транзакций за сегодня для текущего `client_id`.
@@ -61,24 +61,26 @@ final dashboardSummaryProvider = FutureProvider.autoDispose<DashboardSummary>((r
 
   Future<void> loadOrders() async {
     try {
-      final r = await raw.get<Map<String, dynamic>>(ApiPaths.ordersList(skip: 0, limit: 200));
-      final data = r.data;
-      if (data == null) return;
-      ordersTotal = (data['total'] as num?)?.toInt();
-      final items = data['items'] as List<dynamic>? ?? [];
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      var n = 0;
-      for (final e in items) {
-        final m = e as Map<String, dynamic>;
-        final ca = m['created_at'];
-        if (ca is! String) continue;
-        final d = DateTime.tryParse(ca);
-        if (d == null) continue;
-        final d0 = DateTime(d.year, d.month, d.day);
-        if (d0 == today) n++;
+      final rAll = await raw.get<Map<String, dynamic>>(ApiPaths.ordersList(skip: 0, limit: 1));
+      final dataAll = rAll.data;
+      if (dataAll != null) {
+        ordersTotal = (dataAll['total'] as num?)?.toInt();
       }
-      ordersToday = n;
+      final now = DateTime.now();
+      final startLocal = DateTime(now.year, now.month, now.day);
+      final endLocal = startLocal.add(const Duration(days: 1));
+      final rToday = await raw.get<Map<String, dynamic>>(
+        ApiPaths.ordersList(
+          skip: 0,
+          limit: 1,
+          createdFromIso: startLocal.toUtc().toIso8601String(),
+          createdToIso: endLocal.toUtc().toIso8601String(),
+        ),
+      );
+      final dataToday = rToday.data;
+      if (dataToday != null) {
+        ordersToday = (dataToday['total'] as num?)?.toInt();
+      }
     } catch (e) {
       partialErrors.add('Заказы: ${dioErrorMessage(e)}');
     }

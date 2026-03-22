@@ -70,7 +70,7 @@ class DashboardPage extends ConsumerWidget {
                 _KpiCard(
                   icon: Icons.receipt_long,
                   label: 'Заказы сегодня',
-                  subtitle: 'по дате создания (первая страница списка)',
+                  subtitle: 'по дате создания (серверный подсчёт за локальный день)',
                   value: _fmtInt(summary.ordersToday),
                   trend: '',
                   trendUp: true,
