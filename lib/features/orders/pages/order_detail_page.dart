@@ -1,9 +1,50 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class OrderDetailPage extends StatelessWidget {
+import '../data/order_models.dart';
+import '../providers/orders_providers.dart';
+
+class OrderDetailPage extends ConsumerWidget {
   const OrderDetailPage({super.key, required this.id});
 
   final String id;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final parsed = int.tryParse(id);
+    if (parsed == null) {
+      return ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Text('Некорректный номер заказа: $id', style: theme.textTheme.titleMedium),
+        ],
+      );
+    }
+
+    final async = ref.watch(orderDetailProvider(parsed));
+
+    return async.when(
+      data: (order) => _OrderDetailBody(order: order),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          SelectableText(
+            'Ошибка загрузки заказа: $e',
+            style: TextStyle(color: colors.error),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OrderDetailBody extends StatelessWidget {
+  const _OrderDetailBody({required this.order});
+
+  final OrderDetail order;
 
   @override
   Widget build(BuildContext context) {
@@ -20,10 +61,10 @@ class OrderDetailPage extends StatelessWidget {
               onPressed: () => Navigator.of(context).maybePop(),
             ),
             const SizedBox(width: 8),
-            Text('Заказ #$id', style: theme.textTheme.headlineMedium),
+            Text('Заказ #${order.id}', style: theme.textTheme.headlineMedium),
             const SizedBox(width: 12),
             Chip(
-              label: Text('Подтверждён', style: TextStyle(color: colors.primary, fontSize: 12)),
+              label: Text(order.status, style: TextStyle(color: colors.primary, fontSize: 12)),
               backgroundColor: colors.primaryContainer,
               side: BorderSide.none,
               visualDensity: VisualDensity.compact,
@@ -51,32 +92,23 @@ class OrderDetailPage extends StatelessWidget {
                           DataColumn(label: Text('Цена'), numeric: true),
                           DataColumn(label: Text('Сумма'), numeric: true),
                         ],
-                        rows: const [
-                          DataRow(cells: [
-                            DataCell(Text('Сыр Российский 50%')),
-                            DataCell(Text('120 кг')),
-                            DataCell(Text('₽ 680')),
-                            DataCell(Text('₽ 81 600')),
-                          ]),
-                          DataRow(cells: [
-                            DataCell(Text('Масло сливочное 82.5%')),
-                            DataCell(Text('80 кг')),
-                            DataCell(Text('₽ 920')),
-                            DataCell(Text('₽ 73 600')),
-                          ]),
-                          DataRow(cells: [
-                            DataCell(Text('Молоко 3.2% (пак.)')),
-                            DataCell(Text('200 шт')),
-                            DataCell(Text('₽ 85')),
-                            DataCell(Text('₽ 17 000')),
-                          ]),
+                        rows: [
+                          for (final line in order.items)
+                            DataRow(
+                              cells: [
+                                DataCell(Text(line.productName)),
+                                DataCell(Text(line.quantity.toString())),
+                                DataCell(Text('₽ ${line.unitPrice.toStringAsFixed(0)}')),
+                                DataCell(Text('₽ ${line.total.toStringAsFixed(0)}')),
+                              ],
+                            ),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Align(
                         alignment: Alignment.centerRight,
                         child: Text(
-                          'Итого: ₽ 172 200',
+                          'Итого: ${order.formattedTotal}',
                           style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                         ),
                       ),
@@ -97,9 +129,8 @@ class OrderDetailPage extends StatelessWidget {
                         children: [
                           Text('Клиент', style: theme.textTheme.titleMedium),
                           const SizedBox(height: 12),
-                          _InfoRow(label: 'Название', value: 'ООО «Ресторатор»'),
-                          _InfoRow(label: 'ИНН', value: '7712345678'),
-                          _InfoRow(label: 'Контакт', value: '+7 (495) 123-45-67'),
+                          _InfoRow(label: 'Название', value: order.clientName),
+                          _InfoRow(label: 'ID', value: '${order.clientId}'),
                         ],
                       ),
                     ),
@@ -113,9 +144,12 @@ class OrderDetailPage extends StatelessWidget {
                         children: [
                           Text('Доставка', style: theme.textTheme.titleMedium),
                           const SizedBox(height: 12),
-                          _InfoRow(label: 'Адрес', value: 'ул. Ленина, д. 42'),
-                          _InfoRow(label: 'Дата', value: '20.03.2026'),
-                          _InfoRow(label: 'Рейс', value: 'МСК-012'),
+                          _InfoRow(
+                            label: 'Дата',
+                            value: _formatDate(order.deliveryDate),
+                          ),
+                          if (order.routeId != null)
+                            _InfoRow(label: 'Рейс (route_id)', value: '${order.routeId}'),
                         ],
                       ),
                     ),
@@ -127,6 +161,11 @@ class OrderDetailPage extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  static String _formatDate(DateTime d) {
+    String pad2(int n) => n.toString().padLeft(2, '0');
+    return '${pad2(d.day)}.${pad2(d.month)}.${d.year}';
   }
 }
 

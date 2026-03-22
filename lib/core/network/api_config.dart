@@ -22,4 +22,10 @@ abstract final class ApiPaths {
 
   static String financeBalance(int clientId) =>
       '/finance/api/v1/finance/accounts/$clientId/balance';
+
+  /// Список заказов (Traefik stripPrefix `/orders` → сервис видит `/api/v1/...`).
+  static String ordersList({int skip = 0, int limit = 50}) =>
+      '/orders/api/v1/orders?skip=$skip&limit=$limit';
+
+  static String ordersOrder(int id) => '/orders/api/v1/orders/$id';
 }

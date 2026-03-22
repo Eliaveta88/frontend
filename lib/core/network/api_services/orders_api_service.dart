@@ -1,0 +1,35 @@
+import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../api_client.dart';
+import '../api_config.dart';
+import '../../../features/orders/data/order_models.dart';
+
+/// Orders microservice (Traefik prefix `/orders`).
+class OrdersApiService {
+  OrdersApiService(this._dio);
+
+  final Dio _dio;
+
+  Future<OrderListPage> listOrders({int skip = 0, int limit = 50}) async {
+    final r = await _dio.get<Map<String, dynamic>>(ApiPaths.ordersList(skip: skip, limit: limit));
+    final data = r.data;
+    if (data == null) {
+      throw Exception('Пустой ответ списка заказов');
+    }
+    return OrderListPage.fromJson(data);
+  }
+
+  Future<OrderDetail> getOrder(int id) async {
+    final r = await _dio.get<Map<String, dynamic>>(ApiPaths.ordersOrder(id));
+    final data = r.data;
+    if (data == null) {
+      throw Exception('Заказ не найден');
+    }
+    return OrderDetail.fromJson(data);
+  }
+}
+
+final ordersApiServiceProvider = Provider<OrdersApiService>((ref) {
+  return OrdersApiService(ref.watch(rawDioProvider));
+});
