@@ -1,6 +1,4 @@
-/// Пути к API за Traefik (см. docker-compose / docker/traefik/dynamic.yml).
-///
-/// Полный URL: `{baseUrl}{path}` — например `http://localhost/catalog/api/v1/...`
+/// Пути к backend API (базовый URL задаётся в окружении приложения).
 abstract final class ApiPaths {
   static const identityLogin = '/identity/api/v1/identity/login';
   static const identityRefresh = '/identity/api/v1/identity/refresh';
@@ -15,6 +13,9 @@ abstract final class ApiPaths {
   static String catalogProducts({int skip = 0, int limit = 50}) =>
       '/catalog/api/v1/catalog/products?skip=$skip&limit=$limit';
 
+  /// POST создание товара (тело без query).
+  static const catalogProductsCreate = '/catalog/api/v1/catalog/products';
+
   static String catalogProduct(int id) => '/catalog/api/v1/catalog/products/$id';
 
   static String catalogAutocomplete(String query, {int limit = 10}) =>
@@ -26,7 +27,11 @@ abstract final class ApiPaths {
   static String financeBalance(int clientId) =>
       '/finance/api/v1/finance/accounts/$clientId/balance';
 
-  /// Список заказов (Traefik stripPrefix `/orders` → сервис видит `/api/v1/...`).
+  static const financeTransactionsPost = '/finance/api/v1/finance/transactions';
+
+  static const financeInvoiceGenerate = '/finance/api/v1/finance/invoices/generate';
+
+  /// Список заказов.
   static String ordersList({
     int skip = 0,
     int limit = 50,

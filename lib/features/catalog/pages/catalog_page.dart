@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/network/api_services/catalog_api_service.dart';
+import '../../../core/network/dio_error_mapper.dart';
 import '../../../core/routing/route_names.dart';
 import '../../../core/widgets/async_error_card.dart';
 import '../../../core/widgets/empty_list_state.dart';
@@ -120,7 +122,7 @@ class CatalogPage extends ConsumerWidget {
                     ),
                   ),
                   FilledButton.icon(
-                    onPressed: () {},
+                    onPressed: () => _showAddProductDialog(context, ref),
                     icon: const Icon(Icons.add),
                     label: const Text('Добавить товар'),
                   ),
@@ -220,4 +222,122 @@ class CatalogPage extends ConsumerWidget {
       },
     );
   }
+}
+
+Future<void> _showAddProductDialog(BuildContext context, WidgetRef ref) async {
+  final nameCtrl = TextEditingController();
+  final categoryCtrl = TextEditingController();
+  final priceCtrl = TextEditingController();
+  final skuCtrl = TextEditingController();
+  var busy = false;
+
+  await showDialog<void>(
+    context: context,
+    builder: (ctx) {
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('Новый товар'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(labelText: 'Название', border: OutlineInputBorder()),
+                    textCapitalization: TextCapitalization.sentences,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: categoryCtrl,
+                    decoration: const InputDecoration(labelText: 'Категория', border: OutlineInputBorder()),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: priceCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Цена, ₽',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: skuCtrl,
+                    decoration: const InputDecoration(labelText: 'Артикул (SKU)', border: OutlineInputBorder()),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: busy ? null : () => Navigator.of(ctx).pop(),
+                child: const Text('Отмена'),
+              ),
+              FilledButton(
+                onPressed: busy
+                    ? null
+                    : () async {
+                        final name = nameCtrl.text.trim();
+                        final category = categoryCtrl.text.trim();
+                        final sku = skuCtrl.text.trim();
+                        final price = double.tryParse(priceCtrl.text.trim().replaceAll(',', '.'));
+                        if (name.isEmpty || category.isEmpty || sku.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Заполните название, категорию и артикул')),
+                          );
+                          return;
+                        }
+                        if (price == null || price <= 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Укажите цену больше нуля')),
+                          );
+                          return;
+                        }
+                        setDialogState(() => busy = true);
+                        try {
+                          await ref.read(catalogApiServiceProvider).createProduct(
+                                name: name,
+                                category: category,
+                                price: price,
+                                sku: sku,
+                              );
+                          if (context.mounted) {
+                            Navigator.of(ctx).pop();
+                            ref.invalidate(catalogProductsProvider);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Товар добавлен')),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(dioErrorMessage(e))),
+                            );
+                          }
+                        } finally {
+                          if (context.mounted) {
+                            setDialogState(() => busy = false);
+                          }
+                        }
+                      },
+                child: busy
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Создать'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+
+  nameCtrl.dispose();
+  categoryCtrl.dispose();
+  priceCtrl.dispose();
+  skuCtrl.dispose();
 }

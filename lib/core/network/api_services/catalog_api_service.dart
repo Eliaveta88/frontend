@@ -29,6 +29,28 @@ class CatalogApiService {
     return ProductDetail.fromJson(data);
   }
 
+  Future<ProductDetail> createProduct({
+    required String name,
+    required String category,
+    required double price,
+    required String sku,
+  }) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      ApiPaths.catalogProductsCreate,
+      data: {
+        'name': name,
+        'category': category,
+        'price': price,
+        'sku': sku,
+      },
+    );
+    final data = r.data;
+    if (data == null) {
+      throw Exception('Пустой ответ при создании товара');
+    }
+    return ProductDetail.fromJson(data);
+  }
+
   Future<List<CatalogAutocompleteItem>> autocomplete(String query, {int limit = 10}) async {
     final r = await _dio.get<Map<String, dynamic>>(ApiPaths.catalogAutocomplete(query, limit: limit));
     final data = r.data;
