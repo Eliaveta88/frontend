@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../core/network/api_services/orders_api_service.dart';
 import '../../../core/network/dio_error_mapper.dart';
 import '../../../core/routing/route_names.dart';
 import '../../../core/widgets/async_error_card.dart';
+import '../../../core/widgets/bokeh_modal.dart';
 import '../../../core/widgets/empty_list_state.dart';
 import '../../../core/widgets/loading_skeletons.dart';
 import '../providers/orders_providers.dart';
@@ -21,7 +23,7 @@ class OrdersPage extends ConsumerWidget {
     final skip = ref.watch(ordersSkipProvider);
 
     return ListView(
-      padding: const EdgeInsets.all(24),
+      padding: AppTheme.pagePadding,
       children: [
         Row(
           children: [
@@ -29,11 +31,17 @@ class OrdersPage extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Заказы', style: theme.textTheme.headlineMedium),
-                  const SizedBox(height: 4),
+                  Text(
+                    'Заказы',
+                    style: theme.textTheme.headlineMedium?.copyWith(letterSpacing: -0.3),
+                  ),
+                  const SizedBox(height: 8),
                   Text(
                     'Список заказов и статусы',
-                    style: theme.textTheme.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: colors.onSurfaceVariant,
+                      height: 1.45,
+                    ),
                   ),
                 ],
               ),
@@ -152,95 +160,117 @@ class OrdersPage extends ConsumerWidget {
     final notesCtrl = TextEditingController();
     var delivery = DateTime.now().add(const Duration(days: 1));
 
-    await showDialog<void>(
+    await showBokehModal<void>(
       context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setLocal) {
-            return AlertDialog(
-              title: const Text('Новый заказ'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: clientCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'client_id'),
-                    ),
-                    TextField(
-                      controller: productCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'product_id'),
-                    ),
-                    TextField(
-                      controller: qtyCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'Количество'),
-                    ),
-                    const SizedBox(height: 8),
-                    ListTile(
-                      title: const Text('Дата доставки'),
-                      subtitle: Text('${delivery.toLocal()}'.split(' ').take(2).join(' ')),
-                      trailing: const Icon(Icons.calendar_today),
-                      onTap: () async {
-                        final d = await showDatePicker(
-                          context: context,
-                          initialDate: delivery,
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 365)),
-                        );
-                        if (d != null) {
-                          setLocal(() {
-                            delivery = DateTime(d.year, d.month, d.day, delivery.hour, delivery.minute);
-                          });
-                        }
-                      },
-                    ),
-                    TextField(
-                      controller: notesCtrl,
-                      decoration: const InputDecoration(labelText: 'Заметки (необязательно)'),
-                      maxLines: 2,
-                    ),
-                  ],
+      maxWidth: 440,
+      child: StatefulBuilder(
+        builder: (context, setLocal) {
+          return BokehModalCard(
+            title: 'Новый заказ',
+            subtitle: 'Клиент, позиция и дата доставки',
+            body: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: clientCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'client_id',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Отмена')),
-                FilledButton(
-                  onPressed: () async {
-                    final clientId = int.tryParse(clientCtrl.text.trim());
-                    final pid = int.tryParse(productCtrl.text.trim());
-                    final qty = double.tryParse(qtyCtrl.text.trim().replaceAll(',', '.'));
-                    if (clientId == null || pid == null || qty == null || qty <= 0) {
-                      return;
-                    }
-                    try {
-                      await ref.read(ordersApiServiceProvider).createOrder(
-                            clientId: clientId,
-                            items: [
-                              {'product_id': pid, 'quantity': qty},
-                            ],
-                            deliveryDate: delivery,
-                            notes: notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim(),
-                          );
-                      ref.invalidate(ordersListProvider);
-                      if (ctx.mounted) Navigator.pop(ctx);
-                    } catch (e) {
-                      if (ctx.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(dioErrorMessage(e))),
-                        );
-                      }
+                const SizedBox(height: 12),
+                TextField(
+                  controller: productCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'product_id',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: qtyCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Количество',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Дата доставки'),
+                  subtitle: Text('${delivery.toLocal()}'.split(' ').take(2).join(' ')),
+                  trailing: const Icon(Icons.calendar_today),
+                  onTap: () async {
+                    final d = await showDatePicker(
+                      context: context,
+                      initialDate: delivery,
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                    );
+                    if (d != null) {
+                      setLocal(() {
+                        delivery = DateTime(d.year, d.month, d.day, delivery.hour, delivery.minute);
+                      });
                     }
                   },
-                  child: const Text('Создать'),
+                ),
+                TextField(
+                  controller: notesCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Заметки (необязательно)',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
                 ),
               ],
-            );
-          },
-        );
-      },
-    );
+            ),
+            actions: [
+              OutlinedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Отмена'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  final clientId = int.tryParse(clientCtrl.text.trim());
+                  final pid = int.tryParse(productCtrl.text.trim());
+                  final qty = double.tryParse(qtyCtrl.text.trim().replaceAll(',', '.'));
+                  if (clientId == null || pid == null || qty == null || qty <= 0) {
+                    return;
+                  }
+                  try {
+                    await ref.read(ordersApiServiceProvider).createOrder(
+                          clientId: clientId,
+                          items: [
+                            {'product_id': pid, 'quantity': qty},
+                          ],
+                          deliveryDate: delivery,
+                          notes: notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim(),
+                        );
+                    ref.invalidate(ordersListProvider);
+                    if (context.mounted) Navigator.of(context).pop();
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(dioErrorMessage(e))),
+                      );
+                    }
+                  }
+                },
+                child: const Text('Создать'),
+              ),
+            ],
+          );
+        },
+      ),
+    ).whenComplete(() {
+      clientCtrl.dispose();
+      productCtrl.dispose();
+      qtyCtrl.dispose();
+      notesCtrl.dispose();
+    });
   }
 }

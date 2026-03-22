@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../core/network/api_services/warehouse_api_service.dart';
 import '../../../core/network/dio_error_mapper.dart';
 import '../../../core/widgets/async_error_card.dart';
+import '../../../core/widgets/bokeh_modal.dart';
 import '../../../core/widgets/empty_list_state.dart';
 import '../../../core/widgets/loading_skeletons.dart';
 import '../providers/warehouse_providers.dart';
@@ -19,7 +21,7 @@ class WarehousePage extends ConsumerWidget {
 
     return async.when(
       loading: () => ListView(
-        padding: const EdgeInsets.all(24),
+        padding: AppTheme.pagePadding,
         children: [
           Row(
             children: [
@@ -58,7 +60,7 @@ class WarehousePage extends ConsumerWidget {
           await ref.read(warehouseStockProvider.future);
         },
         child: ListView(
-          padding: const EdgeInsets.all(24),
+          padding: AppTheme.pagePadding,
           children: [
             Row(
               children: [
@@ -66,11 +68,17 @@ class WarehousePage extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Склад', style: theme.textTheme.headlineMedium),
-                      const SizedBox(height: 4),
+                      Text(
+                        'Склад',
+                        style: theme.textTheme.headlineMedium?.copyWith(letterSpacing: -0.3),
+                      ),
+                      const SizedBox(height: 8),
                       Text(
                         'Остатки на складе (${page.total} поз.)',
-                        style: theme.textTheme.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: colors.onSurfaceVariant,
+                          height: 1.45,
+                        ),
                       ),
                     ],
                   ),
@@ -136,101 +144,123 @@ class WarehousePage extends ConsumerWidget {
 
     final messenger = ScaffoldMessenger.of(context);
 
-    await showDialog<void>(
+    await showBokehModal<void>(
       context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setLocal) {
-            return AlertDialog(
-              title: const Text('Оприходование партии'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: productCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'product_id'),
-                    ),
-                    TextField(
-                      controller: qtyCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Количество'),
-                    ),
-                    TextField(
-                      controller: unitCtrl,
-                      decoration: const InputDecoration(labelText: 'Ед. измерения (unit, kg, …)'),
-                    ),
-                    ListTile(
-                      title: const Text('Срок годности'),
-                      subtitle: Text(expiry.toLocal().toString().split(' ').first),
-                      trailing: const Icon(Icons.calendar_today),
-                      onTap: () async {
-                        final d = await showDatePicker(
-                          context: context,
-                          initialDate: expiry,
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 3650)),
-                        );
-                        if (d != null) {
-                          setLocal(() {
-                            expiry = DateTime(d.year, d.month, d.day, 12);
-                          });
-                        }
-                      },
-                    ),
-                    TextField(
-                      controller: cellCtrl,
-                      decoration: const InputDecoration(labelText: 'Ячейка'),
-                    ),
-                    TextField(
-                      controller: batchCtrl,
-                      decoration: const InputDecoration(labelText: 'Номер партии'),
-                    ),
-                  ],
+      maxWidth: 440,
+      child: StatefulBuilder(
+        builder: (context, setLocal) {
+          return BokehModalCard(
+            title: 'Оприходование партии',
+            subtitle: 'Новая партия на складе',
+            body: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: productCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'product_id',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Отмена')),
-                FilledButton(
-                  onPressed: () async {
-                    final pid = int.tryParse(productCtrl.text.trim());
-                    final qty = int.tryParse(qtyCtrl.text.trim());
-                    if (pid == null || qty == null || qty <= 0) {
-                      messenger.showSnackBar(
-                        const SnackBar(content: Text('Укажите корректные product_id и количество')),
-                      );
-                      return;
-                    }
-                    try {
-                      await ref.read(warehouseApiServiceProvider).receiveBatch(
-                            productId: pid,
-                            quantity: qty,
-                            unitType: unitCtrl.text.trim().isEmpty ? 'unit' : unitCtrl.text.trim(),
-                            expiryDate: expiry,
-                            cellLocation: cellCtrl.text.trim(),
-                            batchReference: batchCtrl.text.trim(),
-                          );
-                      ref.invalidate(warehouseStockProvider);
-                      if (ctx.mounted) {
-                        Navigator.pop(ctx);
-                        messenger.showSnackBar(
-                          const SnackBar(content: Text('Партия оприходована')),
-                        );
-                      }
-                    } catch (e) {
-                      messenger.showSnackBar(
-                        SnackBar(content: Text(dioErrorMessage(e))),
-                      );
+                const SizedBox(height: 12),
+                TextField(
+                  controller: qtyCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Количество',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: unitCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Ед. измерения (unit, kg, …)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Срок годности'),
+                  subtitle: Text(expiry.toLocal().toString().split(' ').first),
+                  trailing: const Icon(Icons.calendar_today),
+                  onTap: () async {
+                    final d = await showDatePicker(
+                      context: context,
+                      initialDate: expiry,
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 3650)),
+                    );
+                    if (d != null) {
+                      setLocal(() {
+                        expiry = DateTime(d.year, d.month, d.day, 12);
+                      });
                     }
                   },
-                  child: const Text('Оприходовать'),
+                ),
+                TextField(
+                  controller: cellCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Ячейка',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: batchCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Номер партии',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
               ],
-            );
-          },
-        );
-      },
+            ),
+            actions: [
+              OutlinedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Отмена'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  final pid = int.tryParse(productCtrl.text.trim());
+                  final qty = int.tryParse(qtyCtrl.text.trim());
+                  if (pid == null || qty == null || qty <= 0) {
+                    messenger.showSnackBar(
+                      const SnackBar(content: Text('Укажите корректные product_id и количество')),
+                    );
+                    return;
+                  }
+                  try {
+                    await ref.read(warehouseApiServiceProvider).receiveBatch(
+                          productId: pid,
+                          quantity: qty,
+                          unitType: unitCtrl.text.trim().isEmpty ? 'unit' : unitCtrl.text.trim(),
+                          expiryDate: expiry,
+                          cellLocation: cellCtrl.text.trim(),
+                          batchReference: batchCtrl.text.trim(),
+                        );
+                    ref.invalidate(warehouseStockProvider);
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                      messenger.showSnackBar(
+                        const SnackBar(content: Text('Партия оприходована')),
+                      );
+                    }
+                  } catch (e) {
+                    messenger.showSnackBar(
+                      SnackBar(content: Text(dioErrorMessage(e))),
+                    );
+                  }
+                },
+                child: const Text('Оприходовать'),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }

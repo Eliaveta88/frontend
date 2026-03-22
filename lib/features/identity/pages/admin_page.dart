@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../core/network/api_services/identity_api_service.dart';
 import '../../../core/network/dio_error_mapper.dart';
 import '../../../core/widgets/async_error_card.dart';
+import '../../../core/widgets/bokeh_modal.dart';
 import '../../../core/widgets/empty_list_state.dart';
 import '../../../core/widgets/loading_skeletons.dart';
 import '../providers/admin_users_provider.dart';
@@ -24,13 +26,19 @@ class AdminPage extends ConsumerWidget {
       },
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(24),
+        padding: AppTheme.pagePadding,
         children: [
-          Text('Администрирование', style: theme.textTheme.headlineMedium),
-          const SizedBox(height: 4),
+          Text(
+            'Администрирование',
+            style: theme.textTheme.headlineMedium?.copyWith(letterSpacing: -0.3),
+          ),
+          const SizedBox(height: 8),
           Text(
             'Пользователи, роли и доступ',
-            style: theme.textTheme.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: colors.onSurfaceVariant,
+              height: 1.45,
+            ),
           ),
           const SizedBox(height: 24),
           Row(
@@ -120,94 +128,93 @@ Future<void> _showAddUserDialog(BuildContext context, WidgetRef ref) async {
   final passCtrl = TextEditingController();
   var busy = false;
 
-  await showDialog<void>(
+  await showBokehModal<void>(
     context: context,
-    builder: (ctx) {
-      return StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            title: const Text('Новый пользователь'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: loginCtrl,
-                    decoration: const InputDecoration(labelText: 'Логин', border: OutlineInputBorder()),
-                    textCapitalization: TextCapitalization.none,
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: emailCtrl,
-                    decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: passCtrl,
-                    decoration: const InputDecoration(labelText: 'Пароль', border: OutlineInputBorder()),
-                    obscureText: true,
-                  ),
-                ],
+    maxWidth: 420,
+    child: StatefulBuilder(
+      builder: (context, setDialogState) {
+        return BokehModalCard(
+          title: 'Новый пользователь',
+          subtitle: 'Логин, email и пароль',
+          body: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: loginCtrl,
+                decoration: const InputDecoration(labelText: 'Логин', border: OutlineInputBorder()),
+                textCapitalization: TextCapitalization.none,
               ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: busy ? null : () => Navigator.of(ctx).pop(),
-                child: const Text('Отмена'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: emailCtrl,
+                decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
+                keyboardType: TextInputType.emailAddress,
               ),
-              FilledButton(
-                onPressed: busy
-                    ? null
-                    : () async {
-                        final u = loginCtrl.text.trim();
-                        final em = emailCtrl.text.trim();
-                        final p = passCtrl.text;
-                        if (u.isEmpty || em.isEmpty || p.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Заполните все поля')),
-                          );
-                          return;
-                        }
-                        setDialogState(() => busy = true);
-                        try {
-                          await ref.read(identityApiServiceProvider).register(
-                                username: u,
-                                email: em,
-                                password: p,
-                              );
-                          if (context.mounted) {
-                            Navigator.of(ctx).pop();
-                            ref.invalidate(adminUsersProvider);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Пользователь создан')),
-                            );
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(dioErrorMessage(e))),
-                            );
-                          }
-                        } finally {
-                          if (context.mounted) {
-                            setDialogState(() => busy = false);
-                          }
-                        }
-                      },
-                child: busy
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Создать'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: passCtrl,
+                decoration: const InputDecoration(labelText: 'Пароль', border: OutlineInputBorder()),
+                obscureText: true,
               ),
             ],
-          );
-        },
-      );
-    },
+          ),
+          actions: [
+            OutlinedButton(
+              onPressed: busy ? null : () => Navigator.of(context).pop(),
+              child: const Text('Отмена'),
+            ),
+            FilledButton(
+              onPressed: busy
+                  ? null
+                  : () async {
+                      final u = loginCtrl.text.trim();
+                      final em = emailCtrl.text.trim();
+                      final p = passCtrl.text;
+                      if (u.isEmpty || em.isEmpty || p.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Заполните все поля')),
+                        );
+                        return;
+                      }
+                      setDialogState(() => busy = true);
+                      try {
+                        await ref.read(identityApiServiceProvider).register(
+                              username: u,
+                              email: em,
+                              password: p,
+                            );
+                        if (context.mounted) {
+                          Navigator.of(context).pop();
+                          ref.invalidate(adminUsersProvider);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Пользователь создан')),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(dioErrorMessage(e))),
+                          );
+                        }
+                      } finally {
+                        if (context.mounted) {
+                          setDialogState(() => busy = false);
+                        }
+                      }
+                    },
+              child: busy
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Создать'),
+            ),
+          ],
+        );
+      },
+    ),
   );
 
   loginCtrl.dispose();

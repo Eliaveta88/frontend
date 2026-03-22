@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../core/network/api_services/logistics_api_service.dart';
 import '../../../core/network/dio_error_mapper.dart';
 import '../../../core/widgets/async_error_card.dart';
+import '../../../core/widgets/bokeh_modal.dart';
 import '../../../core/widgets/empty_list_state.dart';
 import '../../../core/widgets/loading_skeletons.dart';
 import '../providers/logistics_providers.dart';
@@ -19,7 +21,7 @@ class LogisticsPage extends ConsumerWidget {
 
     return async.when(
       loading: () => ListView(
-        padding: const EdgeInsets.all(24),
+        padding: AppTheme.pagePadding,
         children: [
           Row(
             children: [
@@ -58,7 +60,7 @@ class LogisticsPage extends ConsumerWidget {
           await ref.read(logisticsRoutesProvider.future);
         },
         child: ListView(
-          padding: const EdgeInsets.all(24),
+          padding: AppTheme.pagePadding,
           children: [
             Row(
               children: [
@@ -66,11 +68,17 @@ class LogisticsPage extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Логистика', style: theme.textTheme.headlineMedium),
-                      const SizedBox(height: 4),
+                      Text(
+                        'Логистика',
+                        style: theme.textTheme.headlineMedium?.copyWith(letterSpacing: -0.3),
+                      ),
+                      const SizedBox(height: 8),
                       Text(
                         'Маршруты (${page.total} всего)',
-                        style: theme.textTheme.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: colors.onSurfaceVariant,
+                          height: 1.45,
+                        ),
                       ),
                     ],
                   ),
@@ -146,159 +154,157 @@ Future<void> _showNewRouteDialog(BuildContext context, WidgetRef ref) async {
   var start = DateTime.now().add(const Duration(hours: 1));
   var busy = false;
 
-  await showDialog<void>(
+  await showBokehModal<void>(
     context: context,
-    builder: (ctx) {
-      return StatefulBuilder(
-        builder: (context, setDialogState) {
-          Future<void> pickStart() async {
-            final d = await showDatePicker(
-              context: context,
-              initialDate: start,
-              firstDate: DateTime.now().subtract(const Duration(days: 1)),
-              lastDate: DateTime.now().add(const Duration(days: 365)),
-            );
-            if (d == null || !context.mounted) return;
-            final t = await showTimePicker(
-              context: context,
-              initialTime: TimeOfDay.fromDateTime(start),
-            );
-            if (t == null || !context.mounted) return;
-            setDialogState(() {
-              start = DateTime(d.year, d.month, d.day, t.hour, t.minute);
-            });
-          }
+    maxWidth: 480,
+    child: StatefulBuilder(
+      builder: (context, setDialogState) {
+        Future<void> pickStart() async {
+          final d = await showDatePicker(
+            context: context,
+            initialDate: start,
+            firstDate: DateTime.now().subtract(const Duration(days: 1)),
+            lastDate: DateTime.now().add(const Duration(days: 365)),
+          );
+          if (d == null || !context.mounted) return;
+          final t = await showTimePicker(
+            context: context,
+            initialTime: TimeOfDay.fromDateTime(start),
+          );
+          if (t == null || !context.mounted) return;
+          setDialogState(() {
+            start = DateTime(d.year, d.month, d.day, t.hour, t.minute);
+          });
+        }
 
-          return AlertDialog(
-            title: const Text('Новый рейс'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextField(
-                    controller: vehicleCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'ID транспорта',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: driverIdCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'ID водителя',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: driverNameCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'ФИО водителя',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: busy ? null : pickStart,
-                    icon: const Icon(Icons.schedule),
-                    label: Text(
-                      'Старт: ${start.toLocal().toString().split('.').first}',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: pointsCtrl,
-                    maxLines: 5,
-                    decoration: const InputDecoration(
-                      labelText: 'Точки доставки',
-                      hintText: 'Каждая строка: номер клиента; адрес',
-                      alignLabelWithHint: true,
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ],
+        return BokehModalCard(
+          title: 'Новый рейс',
+          subtitle: 'Транспорт, водитель и точки доставки',
+          body: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: vehicleCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'ID транспорта',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
               ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: busy ? null : () => Navigator.of(ctx).pop(),
-                child: const Text('Отмена'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: driverIdCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'ID водителя',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
               ),
-              FilledButton(
-                onPressed: busy
-                    ? null
-                    : () async {
-                        final vid = int.tryParse(vehicleCtrl.text.trim());
-                        final did = int.tryParse(driverIdCtrl.text.trim());
-                        final name = driverNameCtrl.text.trim();
-                        final pts = _parseRoutePoints(pointsCtrl.text);
-                        if (vid == null || vid <= 0 || did == null || did <= 0) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Укажите корректные ID транспорта и водителя')),
-                          );
-                          return;
-                        }
-                        if (name.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Укажите ФИО водителя')),
-                          );
-                          return;
-                        }
-                        if (pts.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Добавьте хотя бы одну точку: «номер клиента; адрес»',
-                              ),
-                            ),
-                          );
-                          return;
-                        }
-                        setDialogState(() => busy = true);
-                        try {
-                          await ref.read(logisticsApiServiceProvider).createRoute(
-                                vehicleId: vid,
-                                driverId: did,
-                                driverName: name,
-                                startTime: start,
-                                points: pts,
-                              );
-                          if (context.mounted) {
-                            Navigator.of(ctx).pop();
-                            ref.invalidate(logisticsRoutesProvider);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Маршрут создан')),
-                            );
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(dioErrorMessage(e))),
-                            );
-                          }
-                        } finally {
-                          if (context.mounted) {
-                            setDialogState(() => busy = false);
-                          }
-                        }
-                      },
-                child: busy
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Создать'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: driverNameCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'ФИО водителя',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: busy ? null : pickStart,
+                icon: const Icon(Icons.schedule),
+                label: Text(
+                  'Старт: ${start.toLocal().toString().split('.').first}',
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: pointsCtrl,
+                maxLines: 5,
+                decoration: const InputDecoration(
+                  labelText: 'Точки доставки',
+                  hintText: 'Каждая строка: номер клиента; адрес',
+                  alignLabelWithHint: true,
+                  border: OutlineInputBorder(),
+                ),
               ),
             ],
-          );
-        },
-      );
-    },
+          ),
+          actions: [
+            OutlinedButton(
+              onPressed: busy ? null : () => Navigator.of(context).pop(),
+              child: const Text('Отмена'),
+            ),
+            FilledButton(
+              onPressed: busy
+                  ? null
+                  : () async {
+                      final vid = int.tryParse(vehicleCtrl.text.trim());
+                      final did = int.tryParse(driverIdCtrl.text.trim());
+                      final name = driverNameCtrl.text.trim();
+                      final pts = _parseRoutePoints(pointsCtrl.text);
+                      if (vid == null || vid <= 0 || did == null || did <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Укажите корректные ID транспорта и водителя')),
+                        );
+                        return;
+                      }
+                      if (name.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Укажите ФИО водителя')),
+                        );
+                        return;
+                      }
+                      if (pts.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Добавьте хотя бы одну точку: «номер клиента; адрес»',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+                      setDialogState(() => busy = true);
+                      try {
+                        await ref.read(logisticsApiServiceProvider).createRoute(
+                              vehicleId: vid,
+                              driverId: did,
+                              driverName: name,
+                              startTime: start,
+                              points: pts,
+                            );
+                        if (context.mounted) {
+                          Navigator.of(context).pop();
+                          ref.invalidate(logisticsRoutesProvider);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Маршрут создан')),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(dioErrorMessage(e))),
+                          );
+                        }
+                      } finally {
+                        if (context.mounted) {
+                          setDialogState(() => busy = false);
+                        }
+                      }
+                    },
+              child: busy
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Создать'),
+            ),
+          ],
+        );
+      },
+    ),
   );
 
   vehicleCtrl.dispose();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../core/network/api_services/finance_api_service.dart';
 import '../../../core/network/dio_error_mapper.dart';
 import '../../../core/widgets/async_error_card.dart';
@@ -50,7 +51,7 @@ class _FinancePageState extends ConsumerState<FinancePage> {
     final snap = ref.watch(financeSnapshotProvider);
 
     return ListView(
-      padding: const EdgeInsets.all(24),
+      padding: AppTheme.pagePadding,
       children: [
         Row(
           children: [
@@ -58,11 +59,17 @@ class _FinancePageState extends ConsumerState<FinancePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Финансы', style: theme.textTheme.headlineMedium),
-                  const SizedBox(height: 4),
+                  Text(
+                    'Финансы',
+                    style: theme.textTheme.headlineMedium?.copyWith(letterSpacing: -0.3),
+                  ),
+                  const SizedBox(height: 8),
                   Text(
                     'Баланс и операции клиента',
-                    style: theme.textTheme.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: colors.onSurfaceVariant,
+                      height: 1.45,
+                    ),
                   ),
                 ],
               ),
@@ -167,95 +174,90 @@ class _FinancePageState extends ConsumerState<FinancePage> {
     final orderIdsCtrl = TextEditingController();
     var busy = false;
 
-    showDialog<void>(
+    showBokehModal<void>(
       context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Сформировать счёт'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Клиент: ${ref.read(financeClientIdProvider)}',
-                    style: Theme.of(context).textTheme.bodyMedium,
+      maxWidth: 480,
+      child: StatefulBuilder(
+        builder: (context, setDialogState) {
+          return BokehModalCard(
+            title: 'Сформировать счёт',
+            subtitle: 'Клиент: ${ref.read(financeClientIdProvider)}',
+            body: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: orderIdsCtrl,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Номера заказов',
+                    hintText: 'Через запятую, например: 1, 2, 3',
+                    border: OutlineInputBorder(),
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: orderIdsCtrl,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Номера заказов',
-                      hintText: 'Через запятую, например: 1, 2, 3',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.text,
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: busy ? null : () => Navigator.of(ctx).pop(),
-                  child: const Text('Отмена'),
-                ),
-                FilledButton(
-                  onPressed: busy
-                      ? null
-                        : () async {
-                          final ids = orderIdsCtrl.text
-                              .split(RegExp(r'[\s,;]+'))
-                              .map((s) => int.tryParse(s.trim()))
-                              .whereType<int>()
-                              .toList();
-                          if (ids.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Укажите хотя бы один номер заказа')),
-                            );
-                            return;
-                          }
-                          setDialogState(() => busy = true);
-                          try {
-                            final clientId = ref.read(financeClientIdProvider);
-                            final result = await ref.read(financeApiServiceProvider).generateInvoice(
-                                  clientId: clientId,
-                                  orderIds: ids,
-                                );
-                            if (context.mounted) {
-                              final messenger = ScaffoldMessenger.of(context);
-                              Navigator.of(ctx).pop();
-                              ref.invalidate(financeSnapshotProvider);
-                              final invId = result['invoice_id'];
-                              messenger.showSnackBar(
-                                SnackBar(content: Text('Счёт создан${invId != null ? ' № $invId' : ''}')),
-                              );
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(dioErrorMessage(e))),
-                              );
-                            }
-                          } finally {
-                            if (context.mounted) {
-                              setDialogState(() => busy = false);
-                            }
-                          }
-                        },
-                  child: busy
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Сформировать'),
+                  keyboardType: TextInputType.text,
                 ),
               ],
-            );
-          },
-        );
-      },
+            ),
+            actions: [
+              OutlinedButton(
+                onPressed: busy ? null : () => Navigator.of(context).pop(),
+                child: const Text('Отмена'),
+              ),
+              FilledButton(
+                onPressed: busy
+                    ? null
+                    : () async {
+                        final ids = orderIdsCtrl.text
+                            .split(RegExp(r'[\s,;]+'))
+                            .map((s) => int.tryParse(s.trim()))
+                            .whereType<int>()
+                            .toList();
+                        if (ids.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Укажите хотя бы один номер заказа')),
+                          );
+                          return;
+                        }
+                        setDialogState(() => busy = true);
+                        try {
+                          final clientId = ref.read(financeClientIdProvider);
+                          final result = await ref.read(financeApiServiceProvider).generateInvoice(
+                                clientId: clientId,
+                                orderIds: ids,
+                              );
+                          if (context.mounted) {
+                            final messenger = ScaffoldMessenger.of(context);
+                            Navigator.of(context).pop();
+                            ref.invalidate(financeSnapshotProvider);
+                            final invId = result['invoice_id'];
+                            messenger.showSnackBar(
+                              SnackBar(content: Text('Счёт создан${invId != null ? ' № $invId' : ''}')),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(dioErrorMessage(e))),
+                            );
+                          }
+                        } finally {
+                          if (context.mounted) {
+                            setDialogState(() => busy = false);
+                          }
+                        }
+                      },
+                child: busy
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Сформировать'),
+              ),
+            ],
+          );
+        },
+      ),
     ).whenComplete(orderIdsCtrl.dispose);
   }
 
