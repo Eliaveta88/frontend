@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../auth/auth_provider.dart';
+import 'api_client.dart';
+import 'api_config.dart';
 
 class AuthInterceptor extends Interceptor {
   AuthInterceptor(this._ref);
@@ -25,7 +27,9 @@ class AuthInterceptor extends Interceptor {
         final token = _ref.read(authProvider).accessToken;
         err.requestOptions.headers['Authorization'] = 'Bearer $token';
         try {
-          final response = await Dio().fetch(err.requestOptions);
+          // rawDio без interceptors — иначе цикл с dioProvider
+          final retryDio = _ref.read(rawDioProvider);
+          final response = await retryDio.fetch(err.requestOptions);
           return handler.resolve(response);
         } on DioException catch (retryErr) {
           return handler.next(retryErr);
@@ -40,12 +44,14 @@ class AuthInterceptor extends Interceptor {
     final refresh = _ref.read(authProvider).refreshToken;
     if (refresh == null) return false;
 
+    final raw = _ref.read(rawDioProvider);
     try {
-      final response = await Dio().post(
-        '${_ref.read(authProvider).accessToken != null ? '' : 'http://localhost:8000/api'}/auth/refresh',
+      final response = await raw.post<Map<String, dynamic>>(
+        ApiPaths.identityRefresh,
         data: {'refresh_token': refresh},
       );
-      final data = response.data as Map<String, dynamic>;
+      final data = response.data;
+      if (data == null) return false;
       _ref.read(authProvider.notifier).setTokens(
             access: data['access_token'] as String,
             refresh: data['refresh_token'] as String,

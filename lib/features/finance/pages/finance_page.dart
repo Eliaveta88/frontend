@@ -1,14 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/bokeh_modal.dart';
+import '../providers/finance_providers.dart';
 
-class FinancePage extends StatelessWidget {
+class FinancePage extends ConsumerStatefulWidget {
   const FinancePage({super.key});
+
+  @override
+  ConsumerState<FinancePage> createState() => _FinancePageState();
+}
+
+class _FinancePageState extends ConsumerState<FinancePage> {
+  late final TextEditingController _clientIdCtrl = TextEditingController(text: '1');
+
+  @override
+  void dispose() {
+    _clientIdCtrl.dispose();
+    super.dispose();
+  }
+
+  void _applyClientId() {
+    final id = int.tryParse(_clientIdCtrl.text.trim());
+    if (id != null && id > 0) {
+      ref.read(financeClientIdProvider.notifier).state = id;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final snap = ref.watch(financeSnapshotProvider);
 
     return ListView(
       padding: const EdgeInsets.all(24),
@@ -22,116 +45,97 @@ class FinancePage extends StatelessWidget {
                   Text('Финансы', style: theme.textTheme.headlineMedium),
                   const SizedBox(height: 4),
                   Text(
-                    'Взаиморасчёты, сальдо и инвойсы',
+                    'Баланс и операции клиента',
                     style: theme.textTheme.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
                   ),
                 ],
               ),
             ),
+            SizedBox(
+              width: 120,
+              child: TextField(
+                controller: _clientIdCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'client_id',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                keyboardType: TextInputType.number,
+                onSubmitted: (_) => _applyClientId(),
+              ),
+            ),
+            const SizedBox(width: 8),
+            FilledButton(
+              onPressed: _applyClientId,
+              child: const Text('Загрузить'),
+            ),
+            const SizedBox(width: 8),
             OutlinedButton.icon(
               onPressed: () {},
               icon: const Icon(Icons.description_outlined),
-              label: const Text('Сформировать инвойс'),
+              label: const Text('Инвойс'),
             ),
             const SizedBox(width: 8),
             FilledButton.icon(
               onPressed: () => _showPaymentDialog(context),
               icon: const Icon(Icons.payment),
-              label: const Text('Провести оплату'),
+              label: const Text('Оплата'),
             ),
           ],
         ),
         const SizedBox(height: 24),
-        Text('Счета контрагентов', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 12),
-        Card(
-          child: DataTable(
-            columns: const [
-              DataColumn(label: Text('Контрагент')),
-              DataColumn(label: Text('Сальдо'), numeric: true),
-              DataColumn(label: Text('Кредитный лимит'), numeric: true),
-              DataColumn(label: Text('Использовано'), numeric: true),
-              DataColumn(label: Text('Статус')),
-            ],
-            rows: [
-              _accountRow('ООО «Ресторатор»', '₽ 120 000', '₽ 500 000', '76%', false, colors),
-              _accountRow('ИП Козлов А.В.', '−₽ 45 000', '₽ 200 000', '122%', true, colors),
-              _accountRow('АО «ФудСервис»', '₽ 890 000', '₽ 1 000 000', '11%', false, colors),
-              _accountRow('ООО «Шеф-Повар»', '₽ 0', '₽ 300 000', '100%', false, colors),
-              _accountRow('ИП Белова М.Н.', '₽ 34 500', '₽ 150 000', '77%', false, colors),
-              _accountRow('ООО «ГастроПлюс»', '−₽ 12 000', '₽ 400 000', '103%', true, colors),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        Text('Последние транзакции', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 12),
-        Card(
-          child: Column(
+        snap.when(
+          loading: () => const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator())),
+          error: (e, _) => Text('Ошибка: $e'),
+          data: (data) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _txTile('Оплата от ООО «Ресторатор»', '+₽ 340 000', true, colors),
-              _txTile('Отгрузка заказ #1241', '−₽ 172 200', false, colors),
-              _txTile('Оплата от АО «ФудСервис»', '+₽ 890 000', true, colors),
-              _txTile('Отгрузка заказ #1238', '−₽ 95 400', false, colors),
+              Text('Счёт', style: theme.textTheme.titleMedium),
+              const SizedBox(height: 12),
+              if (data.balance != null)
+                Card(
+                  child: ListTile(
+                    title: Text('client_id ${data.balance!['client_id']}'),
+                    subtitle: Text(
+                      'Баланс: ${data.balance!['balance']} ${data.balance!['currency'] ?? 'RUB'} · '
+                      'лимит: ${data.balance!['credit_limit']}',
+                    ),
+                  ),
+                )
+              else if (data.balanceError != null)
+                Card(
+                  color: colors.errorContainer,
+                  child: ListTile(
+                    leading: Icon(Icons.info_outline, color: colors.error),
+                    title: Text(data.balanceError!),
+                  ),
+                ),
+              const SizedBox(height: 24),
+              Text('Транзакции', style: theme.textTheme.titleMedium),
+              const SizedBox(height: 12),
+              Card(
+                child: data.transactions.isEmpty
+                    ? const ListTile(title: Text('Нет транзакций'))
+                    : Column(
+                        children: data.transactions.map((tx) {
+                          final amt = tx['amount'];
+                          final desc = tx['description']?.toString() ?? '';
+                          final st = tx['status']?.toString() ?? '';
+                          return ListTile(
+                            title: Text(desc),
+                            subtitle: Text(st),
+                            trailing: Text(
+                              '$amt',
+                              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+              ),
             ],
           ),
         ),
       ],
-    );
-  }
-
-  DataRow _accountRow(
-    String name,
-    String balance,
-    String limit,
-    String used,
-    bool overLimit,
-    ColorScheme colors,
-  ) {
-    return DataRow(cells: [
-      DataCell(Text(name)),
-      DataCell(Text(
-        balance,
-        style: TextStyle(
-          color: balance.startsWith('−') ? colors.error : null,
-          fontWeight: FontWeight.w500,
-        ),
-      )),
-      DataCell(Text(limit)),
-      DataCell(Text(used)),
-      DataCell(
-        Chip(
-          label: Text(
-            overLimit ? 'Превышен' : 'Норма',
-            style: TextStyle(
-              fontSize: 12,
-              color: overLimit ? colors.error : colors.primary,
-            ),
-          ),
-          backgroundColor:
-              (overLimit ? colors.error : colors.primary).withAlpha(20),
-          side: BorderSide.none,
-          visualDensity: VisualDensity.compact,
-          padding: EdgeInsets.zero,
-        ),
-      ),
-    ]);
-  }
-
-  Widget _txTile(String title, String amount, bool incoming, ColorScheme colors) {
-    return ListTile(
-      leading: Icon(
-        incoming ? Icons.arrow_downward : Icons.arrow_upward,
-        color: incoming ? colors.primary : colors.error,
-      ),
-      title: Text(title),
-      trailing: Text(
-        amount,
-        style: TextStyle(
-          fontWeight: FontWeight.w600,
-          color: incoming ? colors.primary : colors.error,
-        ),
-      ),
     );
   }
 
@@ -140,7 +144,7 @@ class FinancePage extends StatelessWidget {
       context: context,
       child: BokehModalCard(
         title: 'Провести оплату',
-        subtitle: 'Регистрация входящего платежа',
+        subtitle: 'Форма будет отправлять POST /finance/.../transactions',
         body: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
