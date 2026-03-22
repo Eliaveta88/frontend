@@ -31,4 +31,7 @@ abstract final class ApiPaths {
 
   static String warehouseStock({int skip = 0, int limit = 50}) =>
       '/warehouse/api/v1/warehouse?skip=$skip&limit=$limit';
+
+  static String logisticsRoutes({int skip = 0, int limit = 50}) =>
+      '/logistics/api/v1/logistics?skip=$skip&limit=$limit';
 }

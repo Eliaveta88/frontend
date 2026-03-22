@@ -13,6 +13,7 @@ class DashboardSummary {
     this.ordersTotal,
     this.ordersToday,
     this.revenueTodayRub,
+    this.routesInProgress,
     this.partialErrors = const [],
   });
 
@@ -28,6 +29,9 @@ class DashboardSummary {
   /// Сумма проведённых (`completed`) транзакций за сегодня для текущего `client_id`.
   final double? revenueTodayRub;
 
+  /// Маршруты со статусом `in_progress` (по первой странице списка).
+  final int? routesInProgress;
+
   /// Частичные сбои (остальные KPI могли загрузиться).
   final List<String> partialErrors;
 }
@@ -40,6 +44,7 @@ final dashboardSummaryProvider = FutureProvider.autoDispose<DashboardSummary>((r
   int? ordersTotal;
   int? ordersToday;
   double? revenueTodayRub;
+  int? routesInProgress;
   final partialErrors = <String>[];
 
   Future<void> loadCatalog() async {
@@ -111,10 +116,28 @@ final dashboardSummaryProvider = FutureProvider.autoDispose<DashboardSummary>((r
     }
   }
 
+  Future<void> loadLogistics() async {
+    try {
+      final r = await raw.get<Map<String, dynamic>>(ApiPaths.logisticsRoutes(skip: 0, limit: 200));
+      final data = r.data;
+      if (data == null) return;
+      final items = data['items'] as List<dynamic>? ?? [];
+      var n = 0;
+      for (final e in items) {
+        final m = e as Map<String, dynamic>;
+        if (m['status']?.toString() == 'in_progress') n++;
+      }
+      routesInProgress = n;
+    } catch (e) {
+      partialErrors.add('Логистика: ${dioErrorMessage(e)}');
+    }
+  }
+
   await Future.wait<void>([
     loadCatalog(),
     loadOrders(),
     loadFinanceToday(),
+    loadLogistics(),
   ]);
 
   return DashboardSummary(
@@ -122,6 +145,7 @@ final dashboardSummaryProvider = FutureProvider.autoDispose<DashboardSummary>((r
     ordersTotal: ordersTotal,
     ordersToday: ordersToday,
     revenueTodayRub: revenueTodayRub,
+    routesInProgress: routesInProgress,
     partialErrors: partialErrors,
   );
 });

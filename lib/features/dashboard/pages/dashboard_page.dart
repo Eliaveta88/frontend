@@ -97,8 +97,8 @@ class DashboardPage extends ConsumerWidget {
                 _KpiCard(
                   icon: Icons.local_shipping,
                   label: 'Рейсов в пути',
-                  subtitle: 'API логистики пока без списка',
-                  value: '—',
+                  subtitle: 'маршруты in_progress (первая страница списка)',
+                  value: _fmtInt(summary.routesInProgress),
                   trend: '',
                   trendUp: true,
                   color: colors.secondary,
