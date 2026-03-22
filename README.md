@@ -7,6 +7,8 @@ API доступно по префиксам сервисов, например:
 - `http://localhost/catalog/api/v1/...`
 - `http://localhost/identity/api/v1/...`
 - `http://localhost/finance/api/v1/...`
+- `http://localhost/warehouse/api/v1/...`
+- `http://localhost/logistics/api/v1/...`
 
 Поднимите стек: `docker compose up -d --build` в корне репозитория.
 
@@ -45,9 +47,11 @@ flutter run -d chrome --dart-define=AUTH_ENABLED=true --dart-define=API_BASE_URL
 | Экран | Запросы |
 |-------|---------|
 | Шапка | Поиск по каталогу: autocomplete → переход к карточке товара |
-| Дашборд | KPI: `total` каталога, счётчики заказов, выручка за день из транзакций (`client_id` как на экране «Финансы») |
+| Дашборд | KPI: каталог, заказы, финансы, логистика (`in_progress`), pull-to-refresh |
 | Каталог | `GET .../catalog/api/v1/catalog/products`, карточка товара по id |
 | Заказы | Список и детали через `/orders/api/v1/orders` |
+| Склад | `GET .../warehouse/api/v1/warehouse` — остатки |
+| Логистика | `GET .../logistics/api/v1/logistics` — маршруты |
 | Финансы | Баланс и транзакции по `client_id` (поле на странице) |
 | Логин | `POST .../identity/api/v1/identity/login` (токены в `authProvider`) |
 | Refresh | Через `AuthInterceptor` → `POST .../identity/refresh` |
