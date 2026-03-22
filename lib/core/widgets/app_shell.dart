@@ -6,6 +6,7 @@ import '../auth/auth_provider.dart';
 import '../routing/route_names.dart';
 import '../theme/theme_provider.dart';
 import 'animated_emoji_background.dart';
+import 'catalog_global_search_bar.dart';
 
 class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.child});
@@ -62,15 +63,8 @@ class AppShell extends ConsumerWidget {
             ],
           ),
           actions: [
-            SizedBox(
+            CatalogGlobalSearchBar(
               width: isCompact ? 200 : 320,
-              child: SearchBar(
-                hintText: 'Поиск...',
-                leading: Icon(Icons.search, color: colors.onSurfaceVariant),
-                padding: const WidgetStatePropertyAll(
-                  EdgeInsets.symmetric(horizontal: 12),
-                ),
-              ),
             ),
             const SizedBox(width: 8),
             IconButton(

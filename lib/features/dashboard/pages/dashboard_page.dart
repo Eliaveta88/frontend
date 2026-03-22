@@ -1,77 +1,140 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Дашборд: только бизнес-обзор (KPI, активность). Состояние инфраструктуры — в Traefik.
-class DashboardPage extends StatelessWidget {
+import '../providers/dashboard_providers.dart';
+
+/// Дашборд: KPI из каталога, заказов и финансов (Traefik).
+class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
 
+  static String _fmtInt(int? v) => v == null ? '—' : '$v';
+  static String _fmtMoney(double? v) {
+    if (v == null) return '—';
+    if (v == 0) return '₽ 0';
+    return '₽ ${v.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ')}';
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final async = ref.watch(dashboardSummaryProvider);
 
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        Text('Дашборд', style: theme.textTheme.headlineMedium),
-        const SizedBox(height: 4),
-        Text(
-          'Ключевые показатели и активность',
-          style: theme.textTheme.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
+    return async.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: SelectableText('Дашборд: $e', style: TextStyle(color: colors.error)),
         ),
-        const SizedBox(height: 28),
-        Text('Ключевые показатели', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 16,
-          runSpacing: 16,
+      ),
+      data: (summary) => RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(dashboardSummaryProvider);
+          await ref.read(dashboardSummaryProvider.future);
+        },
+        child: ListView(
+          padding: const EdgeInsets.all(24),
           children: [
-            _KpiCard(
-              icon: Icons.receipt_long,
-              label: 'Заказы сегодня',
-              value: '—',
-              trend: '',
-              trendUp: true,
-              color: colors.primary,
+            Text('Дашборд', style: theme.textTheme.headlineMedium),
+            const SizedBox(height: 4),
+            Text(
+              'Ключевые показатели и активность',
+              style: theme.textTheme.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
             ),
-            _KpiCard(
-              icon: Icons.inventory_2,
-              label: 'Позиций в каталоге',
-              value: '—',
-              trend: '',
-              trendUp: true,
-              color: colors.tertiary,
+            if (summary.partialErrors.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Card(
+                color: colors.errorContainer,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Часть данных не загрузилась', style: theme.textTheme.titleSmall?.copyWith(color: colors.onErrorContainer)),
+                      const SizedBox(height: 8),
+                      for (final line in summary.partialErrors)
+                        Text('• $line', style: theme.textTheme.bodySmall?.copyWith(color: colors.onErrorContainer)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 28),
+            Text('Ключевые показатели', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: [
+                _KpiCard(
+                  icon: Icons.receipt_long,
+                  label: 'Заказы сегодня',
+                  subtitle: 'по дате создания (первая страница списка)',
+                  value: _fmtInt(summary.ordersToday),
+                  trend: '',
+                  trendUp: true,
+                  color: colors.primary,
+                ),
+                _KpiCard(
+                  icon: Icons.inventory_2,
+                  label: 'Позиций в каталоге',
+                  subtitle: 'всего в номенклатуре',
+                  value: _fmtInt(summary.catalogTotal),
+                  trend: '',
+                  trendUp: true,
+                  color: colors.tertiary,
+                ),
+                _KpiCard(
+                  icon: Icons.account_balance,
+                  label: 'Выручка за день',
+                  subtitle: 'сумма completed-транзакций за сегодня (client_id из финансов)',
+                  value: _fmtMoney(summary.revenueTodayRub),
+                  trend: '',
+                  trendUp: true,
+                  color: colors.primary,
+                ),
+                _KpiCard(
+                  icon: Icons.local_shipping,
+                  label: 'Рейсов в пути',
+                  subtitle: 'API логистики пока без списка',
+                  value: '—',
+                  trend: '',
+                  trendUp: true,
+                  color: colors.secondary,
+                ),
+              ],
             ),
-            _KpiCard(
-              icon: Icons.account_balance,
-              label: 'Выручка за день',
-              value: '—',
-              trend: '',
-              trendUp: true,
-              color: colors.primary,
-            ),
-            _KpiCard(
-              icon: Icons.local_shipping,
-              label: 'Рейсов в пути',
-              value: '—',
-              trend: '',
-              trendUp: true,
-              color: colors.secondary,
+            const SizedBox(height: 32),
+            Text('Последняя активность', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Сводка',
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Всего заказов в системе: ${_fmtInt(summary.ordersTotal)}',
+                      style: theme.textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Лента событий (заказы/склад) — в следующих итерациях.',
+                      style: theme.textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 32),
-        Text('Последняя активность', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 12),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'Лента событий будет подключена к заказам и складу.',
-              style: theme.textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -80,6 +143,7 @@ class _KpiCard extends StatelessWidget {
   const _KpiCard({
     required this.icon,
     required this.label,
+    this.subtitle,
     required this.value,
     required this.trend,
     required this.trendUp,
@@ -88,6 +152,7 @@ class _KpiCard extends StatelessWidget {
 
   final IconData icon;
   final String label;
+  final String? subtitle;
   final String value;
   final String trend;
   final bool trendUp;
@@ -99,7 +164,7 @@ class _KpiCard extends StatelessWidget {
     final colors = theme.colorScheme;
 
     return SizedBox(
-      width: 220,
+      width: 240,
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -144,6 +209,13 @@ class _KpiCard extends StatelessWidget {
                 label,
                 style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
               ),
+              if (subtitle != null && subtitle!.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  subtitle!,
+                  style: theme.textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant.withAlpha(180)),
+                ),
+              ],
             ],
           ),
         ),

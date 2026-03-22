@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/dio_error_mapper.dart';
 import '../../../core/widgets/bokeh_modal.dart';
 import '../providers/finance_providers.dart';
 
@@ -86,7 +87,7 @@ class _FinancePageState extends ConsumerState<FinancePage> {
         const SizedBox(height: 24),
         snap.when(
           loading: () => const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator())),
-          error: (e, _) => Text('Ошибка: $e'),
+          error: (e, _) => SelectableText('Ошибка: ${dioErrorMessage(e)}'),
           data: (data) => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

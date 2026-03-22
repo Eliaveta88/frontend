@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/dio_error_mapper.dart';
 import '../data/order_models.dart';
 import '../providers/orders_providers.dart';
 
@@ -32,7 +33,7 @@ class OrderDetailPage extends ConsumerWidget {
         padding: const EdgeInsets.all(24),
         children: [
           SelectableText(
-            'Ошибка загрузки заказа: $e',
+            'Ошибка загрузки заказа: ${dioErrorMessage(e)}',
             style: TextStyle(color: colors.error),
           ),
         ],

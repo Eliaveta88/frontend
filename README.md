@@ -26,13 +26,19 @@ API доступно по префиксам сервисов, например:
 flutter run -d chrome --dart-define=API_BASE_URL=http://192.168.1.10
 ```
 
+### Ошибки сети в UI
+
+Сообщения для пользователя нормализуются через `lib/core/network/dio_error_mapper.dart` (`dioErrorMessage`).
+
 ## Что уже подключено к API
 
 | Экран | Запросы |
 |-------|---------|
-| Дашборд | Только бизнес-обзор (KPI); состояние сервисов смотрите в Traefik |
+| Шапка | Поиск по каталогу: autocomplete → переход к карточке товара |
+| Дашборд | KPI: `total` каталога, счётчики заказов, выручка за день из транзакций (`client_id` как на экране «Финансы») |
 | Каталог | `GET .../catalog/api/v1/catalog/products`, карточка товара по id |
-| Финансы | Баланс и транзакции по `client_id` (поле в шапке) |
+| Заказы | Список и детали через `/orders/api/v1/orders` |
+| Финансы | Баланс и транзакции по `client_id` (поле на странице) |
 | Логин | `POST .../identity/api/v1/identity/login` (токены в `authProvider`) |
 | Refresh | Через `AuthInterceptor` → `POST .../identity/refresh` |
 

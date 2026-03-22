@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/network/dio_error_mapper.dart';
 import '../../../core/routing/route_names.dart';
 import '../providers/catalog_providers.dart';
 
@@ -38,7 +39,7 @@ class CatalogPage extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                e.toString(),
+                dioErrorMessage(e),
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
               ),
@@ -87,7 +88,7 @@ class CatalogPage extends ConsumerWidget {
                 SizedBox(
                   width: 300,
                   child: SearchBar(
-                    hintText: 'Поиск (скоро)...',
+                    hintText: 'Поиск в шапке приложения',
                     leading: Icon(Icons.search, color: colors.onSurfaceVariant),
                     padding: const WidgetStatePropertyAll(
                       EdgeInsets.symmetric(horizontal: 12),

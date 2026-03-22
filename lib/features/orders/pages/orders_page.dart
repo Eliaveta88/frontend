@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/network/dio_error_mapper.dart';
 import '../../../core/routing/route_names.dart';
 import '../providers/orders_providers.dart';
 
@@ -83,7 +84,7 @@ class OrdersPage extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: SelectableText(
-                'Не удалось загрузить заказы: $e\n\n'
+                'Не удалось загрузить заказы: ${dioErrorMessage(e)}\n\n'
                 'Проверьте, что Traefik и сервис orders запущены, а для Flutter Web задана база API, например:\n'
                 'flutter run -d chrome --dart-define=API_BASE_URL=http://localhost',
                 style: TextStyle(color: colors.onErrorContainer),
