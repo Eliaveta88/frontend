@@ -32,7 +32,7 @@ final financeSnapshotProvider = FutureProvider.autoDispose<FinanceSnapshot>((ref
     }
   } on DioException catch (e) {
     if (e.response?.statusCode == 404) {
-      balanceErr = 'Счёт для client_id=$clientId не найден';
+      balanceErr = 'Счёт для клиента № $clientId не найден';
     } else {
       balanceErr = e.message ?? 'Ошибка баланса';
     }
