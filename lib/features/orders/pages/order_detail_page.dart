@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../core/network/dio_error_mapper.dart';
 import '../data/order_models.dart';
 import '../providers/orders_providers.dart';
@@ -94,8 +95,9 @@ class _OrderDetailBody extends StatelessWidget {
                           DataColumn(label: Text('Сумма'), numeric: true),
                         ],
                         rows: [
-                          for (final line in order.items)
+                          for (final (i, line) in order.items.indexed)
                             DataRow(
+                              color: AppTheme.dataRowStripe(i, colors),
                               cells: [
                                 DataCell(Text(line.productName)),
                                 DataCell(Text(line.quantity.toString())),

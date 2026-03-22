@@ -111,8 +111,9 @@ class WarehousePage extends ConsumerWidget {
                     DataColumn(label: Text('Ячейка')),
                   ],
                   rows: [
-                    for (final s in page.items)
+                    for (final (i, s) in page.items.indexed)
                       DataRow(
+                        color: AppTheme.dataRowStripe(i, colors),
                         cells: [
                           DataCell(Text('${s.productName} (#${s.productId})')),
                           DataCell(Text(_fmtQty(s.available))),

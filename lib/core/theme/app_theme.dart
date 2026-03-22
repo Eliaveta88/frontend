@@ -8,6 +8,34 @@ class AppTheme {
   /// Единые отступы для списков и форм на широких экранах.
   static const EdgeInsets pagePadding = EdgeInsets.fromLTRB(28, 28, 28, 36);
 
+  /// Тёмная тема: «шахматка» строк `#000000` / `#1C1C1C` (читаемость OLED).
+  static const tableStripeDarkA = Color(0xFF000000);
+  static const tableStripeDarkB = Color(0xFF1C1C1C);
+
+  /// Светлая тема: мягкое чередование без резкого контраста.
+  static const tableStripeLightA = Color(0xFFFFFFFF);
+  static const tableStripeLightB = Color(0xFFF0F2F4);
+
+  /// Фон строки [DataRow] в стиле шахматной доски; hover/selected слегка подсвечиваются.
+  static WidgetStateProperty<Color?> dataRowStripe(int index, ColorScheme scheme) {
+    final light = scheme.brightness == Brightness.light;
+    final a = light ? tableStripeLightA : tableStripeDarkA;
+    final b = light ? tableStripeLightB : tableStripeDarkB;
+    final base = index.isEven ? a : b;
+    return WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.selected)) {
+        return Color.alphaBlend(scheme.primary.withAlpha(40), base);
+      }
+      if (states.contains(WidgetState.hovered)) {
+        return Color.alphaBlend(
+          (light ? Colors.black : Colors.white).withAlpha(light ? 16 : 22),
+          base,
+        );
+      }
+      return base;
+    });
+  }
+
   static const _seed = Color(0xFF00897B);
 
   /// Почти идеальный чёрный и ступени «подъёма» для AMOLED (минимальная засветка пикселей).
@@ -230,7 +258,7 @@ class AppTheme {
       ),
       dataTableTheme: DataTableThemeData(
         headingRowColor: WidgetStatePropertyAll(
-          scheme.surfaceContainerHighest.withAlpha(60),
+          scheme.surfaceContainerHighest.withAlpha(isLight ? 80 : 72),
         ),
         headingTextStyle: base.titleSmall?.copyWith(
           color: scheme.onSurfaceVariant,
@@ -239,7 +267,7 @@ class AppTheme {
         dataTextStyle: base.bodyMedium?.copyWith(color: scheme.onSurface),
         horizontalMargin: 20,
         columnSpacing: 20,
-        dividerThickness: 0.6,
+        dividerThickness: 0,
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,

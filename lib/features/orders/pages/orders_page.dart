@@ -82,8 +82,9 @@ class OrdersPage extends ConsumerWidget {
                         DataColumn(label: Text('Сумма'), numeric: true),
                       ],
                       rows: [
-                        for (final o in page.items)
+                        for (final (i, o) in page.items.indexed)
                           DataRow(
+                            color: AppTheme.dataRowStripe(i, colors),
                             onSelectChanged: (_) => context.go('${Routes.orders}/${o.id}'),
                             cells: [
                               DataCell(Text('${o.id}')),

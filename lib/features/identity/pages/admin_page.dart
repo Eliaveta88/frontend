@@ -77,8 +77,9 @@ class AdminPage extends ConsumerWidget {
                         DataColumn(label: Text('Статус')),
                       ],
                       rows: [
-                        for (final u in page.items)
+                        for (final (i, u) in page.items.indexed)
                           DataRow(
+                            color: AppTheme.dataRowStripe(i, colors),
                             cells: [
                               DataCell(Text('${u.id}')),
                               DataCell(Text(u.username)),

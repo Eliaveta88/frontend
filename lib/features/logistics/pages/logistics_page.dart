@@ -111,8 +111,9 @@ class LogisticsPage extends ConsumerWidget {
                     DataColumn(label: Text('Точек'), numeric: true),
                   ],
                   rows: [
-                    for (final r in page.items)
+                    for (final (i, r) in page.items.indexed)
                       DataRow(
+                        color: AppTheme.dataRowStripe(i, colors),
                         cells: [
                           DataCell(Text('${r.id}')),
                           DataCell(Text(r.driverName)),

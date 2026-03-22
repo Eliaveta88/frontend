@@ -205,23 +205,27 @@ class CatalogPage extends ConsumerWidget {
                       DataColumn(label: Text('Цена')),
                       DataColumn(label: Text('Наличие')),
                     ],
-                    rows: filtered.map((p) {
-                      final stockColor = p.inStock ? colors.primary : colors.error;
-                      return DataRow(
-                        onSelectChanged: (_) => context.go('${Routes.catalog}/${p.id}'),
-                        cells: [
-                          DataCell(Text(p.name)),
-                          DataCell(Text(p.category)),
-                          DataCell(Text(_formatPrice(p.price))),
-                          DataCell(
-                            Text(
-                              _stockLabel(p.inStock),
-                              style: TextStyle(color: stockColor, fontWeight: FontWeight.w500),
+                    rows: [
+                      for (final (i, p) in filtered.indexed)
+                        DataRow(
+                          color: AppTheme.dataRowStripe(i, colors),
+                          onSelectChanged: (_) => context.go('${Routes.catalog}/${p.id}'),
+                          cells: [
+                            DataCell(Text(p.name)),
+                            DataCell(Text(p.category)),
+                            DataCell(Text(_formatPrice(p.price))),
+                            DataCell(
+                              Text(
+                                _stockLabel(p.inStock),
+                                style: TextStyle(
+                                  color: p.inStock ? colors.primary : colors.error,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
+                          ],
+                        ),
+                    ],
                   ),
                 ),
             ],
