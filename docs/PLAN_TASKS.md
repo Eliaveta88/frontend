@@ -63,11 +63,11 @@
 
 | Сервис | Что сделать |
 |--------|-------------|
-| **orders** | Цены/имена из каталога; клиенты |
-| **warehouse** | Названия товаров из каталога |
-| **logistics** | Имя водителя из identity (сейчас из формы создания) |
-| **finance** | **`credit_limit` и `status` из таблицы `accounts` в balance API**; полноценная генерация invoice — позже |
-| **identity** | Надёжное хеширование паролей |
+| **orders** | ✅ **Цены/имена** — `httpx` → catalog `GET .../products/{id}`; **client_name** — identity `GET .../users/{id}`; в Docker: `CATALOG_BASE_URL`, `IDENTITY_BASE_URL` |
+| **warehouse** | ✅ **product_name** при оприходовании — catalog; `CATALOG_BASE_URL` |
+| **logistics** | ✅ **driver_name** — username из identity по `driver_id`, иначе значение из формы; `IDENTITY_BASE_URL` |
+| **finance** | **`credit_limit` и `status` из таблицы `accounts` в balance API** ✅; полноценная генерация invoice — позже |
+| **identity** | ✅ **bcrypt** для новых паролей + проверка; legacy `hashed_<plain>` для старых записей; **`GET /users/{id}`** для интеграций |
 
 ---
 
