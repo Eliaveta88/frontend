@@ -83,10 +83,20 @@ class AppShell extends ConsumerWidget {
                 backgroundColor: colors.primaryContainer,
                 child: Icon(Icons.person, size: 18, color: colors.onPrimaryContainer),
               ),
-              itemBuilder: (_) => [
-                const PopupMenuItem(value: 'profile', child: Text('Профиль')),
-                const PopupMenuItem(value: 'logout', child: Text('Выход')),
-              ],
+              itemBuilder: (_) {
+                final name = ref.watch(authProvider).profile?.username;
+                return [
+                  PopupMenuItem(
+                    enabled: false,
+                    child: Text(
+                      name != null ? 'Вошли как $name' : 'Гость',
+                      style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+                    ),
+                  ),
+                  const PopupMenuItem(value: 'profile', child: Text('Профиль')),
+                  const PopupMenuItem(value: 'logout', child: Text('Выход')),
+                ];
+              },
               onSelected: (value) {
                 if (value == 'logout') {
                   ref.read(authProvider.notifier).logout();

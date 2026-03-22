@@ -1,7 +1,9 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/auth/auth_provider.dart';
+import '../../../core/network/dio_error_mapper.dart';
 import '../../../core/widgets/animated_emoji_background.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -34,7 +36,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             password: _passwordCtrl.text,
           );
     } catch (e) {
-      if (mounted) setState(() => _error = 'Неверный логин или пароль');
+      if (mounted) {
+        setState(() {
+          _error = e is DioException ? dioErrorMessage(e) : 'Неверный логин или пароль';
+        });
+      }
     }
   }
 

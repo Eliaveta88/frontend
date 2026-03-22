@@ -12,22 +12,25 @@ import '../../features/logistics/pages/logistics_page.dart';
 import '../../features/orders/pages/orders_page.dart';
 import '../../features/orders/pages/order_detail_page.dart';
 import '../../features/warehouse/pages/warehouse_page.dart';
+import '../auth/auth_flags.dart';
 import '../auth/auth_provider.dart';
 import '../widgets/app_shell.dart';
+import 'go_router_refresh.dart';
 import 'route_names.dart';
 
 final _rootNavKey = GlobalKey<NavigatorState>();
 final _shellNavKey = GlobalKey<NavigatorState>();
-const _authEnabled = false;
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final auth = ref.watch(authProvider);
+  final refresh = ref.watch(goRouterRefreshProvider);
 
   return GoRouter(
     navigatorKey: _rootNavKey,
-    initialLocation: Routes.dashboard,
+    refreshListenable: refresh,
+    initialLocation: kAuthEnabled ? Routes.login : Routes.dashboard,
     redirect: (context, state) {
-      if (!_authEnabled) return null;
+      if (!kAuthEnabled) return null;
+      final auth = ProviderScope.containerOf(context).read(authProvider);
       final loggedIn = auth.isAuthenticated;
       final goingToLogin = state.matchedLocation == Routes.login;
 

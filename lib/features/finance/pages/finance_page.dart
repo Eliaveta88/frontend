@@ -13,7 +13,13 @@ class FinancePage extends ConsumerStatefulWidget {
 }
 
 class _FinancePageState extends ConsumerState<FinancePage> {
-  late final TextEditingController _clientIdCtrl = TextEditingController(text: '1');
+  late final TextEditingController _clientIdCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _clientIdCtrl = TextEditingController(text: '${ref.read(financeClientIdProvider)}');
+  }
 
   @override
   void dispose() {
@@ -32,6 +38,11 @@ class _FinancePageState extends ConsumerState<FinancePage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    ref.listen<int>(financeClientIdProvider, (prev, next) {
+      if (_clientIdCtrl.text != '$next') {
+        _clientIdCtrl.text = '$next';
+      }
+    });
     final snap = ref.watch(financeSnapshotProvider);
 
     return ListView(

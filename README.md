@@ -26,6 +26,16 @@ API доступно по префиксам сервисов, например:
 flutter run -d chrome --dart-define=API_BASE_URL=http://192.168.1.10
 ```
 
+### Обязательный вход
+
+По умолчанию приложение открывается **без** экрана логина (удобно для разработки). Чтобы требовать JWT и редиректить на `/login`:
+
+```bash
+flutter run -d chrome --dart-define=AUTH_ENABLED=true --dart-define=API_BASE_URL=http://localhost
+```
+
+После успешного входа `client_id` для финансов подставляется из **id пользователя** identity (для сидов 1:1 с `accounts.client_id`).
+
 ### Ошибки сети в UI
 
 Сообщения для пользователя нормализуются через `lib/core/network/dio_error_mapper.dart` (`dioErrorMessage`).
