@@ -18,6 +18,32 @@ class WarehouseApiService {
     }
     return StockListPage.fromJson(data);
   }
+
+  Future<Map<String, dynamic>> receiveBatch({
+    required int productId,
+    required int quantity,
+    required String unitType,
+    required DateTime expiryDate,
+    required String cellLocation,
+    required String batchReference,
+  }) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      ApiPaths.warehouseReceive,
+      data: {
+        'product_id': productId,
+        'quantity': quantity,
+        'unit_type': unitType,
+        'expiry_date': expiryDate.toUtc().toIso8601String(),
+        'cell_location': cellLocation,
+        'batch_reference': batchReference,
+      },
+    );
+    final data = r.data;
+    if (data == null) {
+      throw Exception('Пустой ответ оприходования');
+    }
+    return data;
+  }
 }
 
 final warehouseApiServiceProvider = Provider<WarehouseApiService>((ref) {

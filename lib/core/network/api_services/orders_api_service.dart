@@ -28,6 +28,29 @@ class OrdersApiService {
     }
     return OrderDetail.fromJson(data);
   }
+
+  /// POST [ApiPaths.ordersCreate].
+  Future<OrderDetail> createOrder({
+    required int clientId,
+    required List<Map<String, dynamic>> items,
+    required DateTime deliveryDate,
+    String? notes,
+  }) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      ApiPaths.ordersCreate,
+      data: {
+        'client_id': clientId,
+        'items': items,
+        'delivery_date': deliveryDate.toUtc().toIso8601String(),
+        if (notes != null && notes.trim().isNotEmpty) 'notes': notes,
+      },
+    );
+    final data = r.data;
+    if (data == null) {
+      throw Exception('Пустой ответ при создании заказа');
+    }
+    return OrderDetail.fromJson(data);
+  }
 }
 
 final ordersApiServiceProvider = Provider<OrdersApiService>((ref) {
