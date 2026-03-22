@@ -9,6 +9,9 @@ abstract final class ApiPaths {
   /// POST create user (register).
   static const identityRegisterUsers = '/identity/api/v1/identity/users';
 
+  static String identityUsersList({int skip = 0, int limit = 50}) =>
+      '/identity/api/v1/identity/users?skip=$skip&limit=$limit';
+
   static String catalogProducts({int skip = 0, int limit = 50}) =>
       '/catalog/api/v1/catalog/products?skip=$skip&limit=$limit';
 
@@ -27,10 +30,15 @@ abstract final class ApiPaths {
   static String ordersList({int skip = 0, int limit = 50}) =>
       '/orders/api/v1/orders?skip=$skip&limit=$limit';
 
+  /// POST создание заказа (тот же префикс, без query).
+  static const ordersCreate = '/orders/api/v1/orders';
+
   static String ordersOrder(int id) => '/orders/api/v1/orders/$id';
 
   static String warehouseStock({int skip = 0, int limit = 50}) =>
       '/warehouse/api/v1/warehouse?skip=$skip&limit=$limit';
+
+  static const warehouseReceive = '/warehouse/api/v1/warehouse/receive';
 
   static String logisticsRoutes({int skip = 0, int limit = 50}) =>
       '/logistics/api/v1/logistics?skip=$skip&limit=$limit';
