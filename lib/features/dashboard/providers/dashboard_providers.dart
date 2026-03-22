@@ -88,29 +88,22 @@ final dashboardSummaryProvider = FutureProvider.autoDispose<DashboardSummary>((r
 
   Future<void> loadFinanceToday() async {
     try {
+      final now = DateTime.now();
+      final startLocal = DateTime(now.year, now.month, now.day);
+      final endLocal = startLocal.add(const Duration(days: 1));
       final r = await dio.get<Map<String, dynamic>>(
-        ApiPaths.financeTransactions(clientId, skip: 0, limit: 100),
+        ApiPaths.financeRevenue(
+          clientId,
+          fromIso: startLocal.toUtc().toIso8601String(),
+          toIso: endLocal.toUtc().toIso8601String(),
+        ),
       );
       final data = r.data;
       if (data == null) return;
-      final items = data['items'] as List<dynamic>? ?? [];
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      var sum = 0.0;
-      for (final e in items) {
-        final m = e as Map<String, dynamic>;
-        final ca = m['created_at'];
-        if (ca is! String) continue;
-        final d = DateTime.tryParse(ca);
-        if (d == null) continue;
-        final d0 = DateTime(d.year, d.month, d.day);
-        if (d0 != today) continue;
-        final status = m['status']?.toString() ?? '';
-        if (status != 'completed') continue;
-        final amt = (m['amount'] as num?)?.toDouble() ?? 0;
-        if (amt > 0) sum += amt;
+      final total = data['total_amount'];
+      if (total is num) {
+        revenueTodayRub = total.toDouble();
       }
-      revenueTodayRub = sum;
     } on DioException catch (e) {
       partialErrors.add('Финансы: ${dioErrorMessage(e)}');
     } catch (e) {

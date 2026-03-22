@@ -38,6 +38,17 @@ void main() {
       expect(p, contains(Uri.encodeQueryComponent('молоко & сыр')));
     });
 
+    test('financeRevenue builds query with from and to', () {
+      final p = ApiPaths.financeRevenue(
+        42,
+        fromIso: '2026-03-22T00:00:00.000Z',
+        toIso: '2026-03-23T00:00:00.000Z',
+      );
+      expect(p, contains('/finance/api/v1/finance/accounts/42/revenue'));
+      expect(p, contains('from='));
+      expect(p, contains('to='));
+    });
+
     test('logisticsRoutes optional status', () {
       expect(
         ApiPaths.logisticsRoutes(skip: 0, limit: 1),

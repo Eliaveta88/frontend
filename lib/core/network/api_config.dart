@@ -27,6 +27,15 @@ abstract final class ApiPaths {
   static String financeBalance(int clientId) =>
       '/finance/api/v1/finance/accounts/$clientId/balance';
 
+  /// Сумма завершённых положительных транзакций за полуинтервал [from, to) — см. finance `GET .../revenue`.
+  static String financeRevenue(int clientId, {required String fromIso, required String toIso}) {
+    final q = Uri(queryParameters: {
+      'from': fromIso,
+      'to': toIso,
+    }).query;
+    return '/finance/api/v1/finance/accounts/$clientId/revenue?$q';
+  }
+
   static const financeTransactionsPost = '/finance/api/v1/finance/transactions';
 
   static const financeInvoiceGenerate = '/finance/api/v1/finance/invoices/generate';
