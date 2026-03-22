@@ -18,6 +18,37 @@ class LogisticsApiService {
     }
     return RouteListPage.fromJson(data);
   }
+
+  /// Создать маршрут с точками доставки.
+  Future<RouteRow> createRoute({
+    required int vehicleId,
+    required int driverId,
+    required String driverName,
+    required DateTime startTime,
+    required List<({int clientId, String address})> points,
+  }) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      ApiPaths.logisticsRoutesCreate,
+      data: {
+        'vehicle_id': vehicleId,
+        'driver_id': driverId,
+        'driver_name': driverName,
+        'start_time': startTime.toUtc().toIso8601String(),
+        'points': [
+          for (final p in points)
+            <String, dynamic>{
+              'client_id': p.clientId,
+              'address': p.address,
+            },
+        ],
+      },
+    );
+    final data = r.data;
+    if (data == null) {
+      throw Exception('Пустой ответ при создании маршрута');
+    }
+    return RouteRow.fromJson(data);
+  }
 }
 
 final logisticsApiServiceProvider = Provider<LogisticsApiService>((ref) {

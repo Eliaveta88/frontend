@@ -64,4 +64,7 @@ abstract final class ApiPaths {
 
   static String logisticsRoutes({int skip = 0, int limit = 50}) =>
       '/logistics/api/v1/logistics?skip=$skip&limit=$limit';
+
+  /// POST создание маршрута (тело без query).
+  static const logisticsRoutesCreate = '/logistics/api/v1/logistics';
 }
