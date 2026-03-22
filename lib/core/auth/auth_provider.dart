@@ -16,15 +16,16 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
 
 class AuthNotifier extends StateNotifier<AuthState> {
   AuthNotifier(this._ref) : super(const AuthState()) {
-    _restoreFromStorage();
+    unawaited(_restoreFromStorage());
   }
 
   final Ref _ref;
 
-  void _restoreFromStorage() {
+  Future<void> _restoreFromStorage() async {
     final prefs = _ref.read(sharedPreferencesProvider);
-    final access = prefs.getString(AuthTokenStorage.accessKey);
-    final refresh = prefs.getString(AuthTokenStorage.refreshKey);
+    final tokens = await AuthTokenStorage.read(prefs);
+    final access = tokens.access;
+    final refresh = tokens.refresh;
     if (access == null ||
         refresh == null ||
         access.isEmpty ||
@@ -32,7 +33,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return;
     }
     state = AuthState(accessToken: access, refreshToken: refresh);
-    Future.microtask(() => refreshProfile());
+    await refreshProfile();
   }
 
   void _schedulePersist() {
