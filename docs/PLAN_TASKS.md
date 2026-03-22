@@ -66,7 +66,7 @@
 | **orders** | ✅ **Цены/имена** — `httpx` → catalog `GET .../products/{id}`; **client_name** — identity `GET .../users/{id}`; в Docker: `CATALOG_BASE_URL`, `IDENTITY_BASE_URL` |
 | **warehouse** | ✅ **product_name** при оприходовании — catalog; `CATALOG_BASE_URL` |
 | **logistics** | ✅ **driver_name** — username из identity по `driver_id`, иначе значение из формы; `IDENTITY_BASE_URL` |
-| **finance** | **`credit_limit` и `status` из таблицы `accounts` в balance API** ✅; полноценная генерация invoice — позже |
+| **finance** | **`credit_limit` и `status` из таблицы `accounts` в balance API** ✅; **генерация invoice** — строка в `invoices`, суммы из orders HTTP (`ORDERS_BASE_URL`), PDF — заглушка `GET .../pdf` (501) |
 | **identity** | ✅ **bcrypt** для новых паролей + проверка; legacy `hashed_<plain>` для старых записей; **`GET /users/{id}`** для интеграций |
 
 ---
