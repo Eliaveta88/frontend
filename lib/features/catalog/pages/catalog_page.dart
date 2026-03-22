@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/network/dio_error_mapper.dart';
 import '../../../core/routing/route_names.dart';
+import '../data/catalog_models.dart';
 import '../providers/catalog_providers.dart';
 
 class CatalogPage extends ConsumerWidget {
@@ -17,11 +18,28 @@ class CatalogPage extends ConsumerWidget {
     return inStock ? 'В наличии' : 'Нет';
   }
 
+  List<ProductListItem> _applyFilters({
+    required List<ProductListItem> items,
+    required String query,
+    required String? category,
+  }) {
+    final q = query.trim().toLowerCase();
+    return items.where((p) {
+      if (category != null && p.category != category) {
+        return false;
+      }
+      if (q.isEmpty) return true;
+      return p.name.toLowerCase().contains(q) || p.category.toLowerCase().contains(q);
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final async = ref.watch(catalogProductsProvider);
+    final searchQuery = ref.watch(catalogSearchQueryProvider);
+    final categoryFilter = ref.watch(catalogCategoryFilterProvider);
 
     return async.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -52,90 +70,125 @@ class CatalogPage extends ConsumerWidget {
           ),
         ),
       ),
-      data: (page) => RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(catalogProductsProvider);
-          await ref.read(catalogProductsProvider.future);
-        },
-        child: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Каталог', style: theme.textTheme.headlineMedium),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Номенклатура (${page.total} поз.)',
-                        style: theme.textTheme.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
-                      ),
-                    ],
-                  ),
-                ),
-                FilledButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.add),
-                  label: const Text('Добавить товар'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                SizedBox(
-                  width: 300,
-                  child: SearchBar(
-                    hintText: 'Поиск в шапке приложения',
-                    leading: Icon(Icons.search, color: colors.onSurfaceVariant),
-                    padding: const WidgetStatePropertyAll(
-                      EdgeInsets.symmetric(horizontal: 12),
+      data: (page) {
+        final categories = page.items.map((p) => p.category).toSet().toList()..sort();
+        final filtered = _applyFilters(
+          items: page.items,
+          query: searchQuery,
+          category: categoryFilter,
+        );
+
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(catalogProductsProvider);
+            await ref.read(catalogProductsProvider.future);
+          },
+          child: ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Каталог', style: theme.textTheme.headlineMedium),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Номенклатура (${page.total} поз., показано ${filtered.length})',
+                          style: theme.textTheme.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                FilterChip(
-                  label: const Text('Все категории'),
-                  onSelected: (_) {},
-                  selected: true,
-                  selectedColor: colors.primaryContainer,
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Card(
-              child: DataTable(
-                showCheckboxColumn: false,
-                columns: const [
-                  DataColumn(label: Text('Название')),
-                  DataColumn(label: Text('Категория')),
-                  DataColumn(label: Text('Цена')),
-                  DataColumn(label: Text('Наличие')),
+                  FilledButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.add),
+                    label: const Text('Добавить товар'),
+                  ),
                 ],
-                rows: page.items.map((p) {
-                  final stockColor = p.inStock ? colors.primary : colors.error;
-                  return DataRow(
-                    onSelectChanged: (_) => context.go('${Routes.catalog}/${p.id}'),
-                    cells: [
-                      DataCell(Text(p.name)),
-                      DataCell(Text(p.category)),
-                      DataCell(Text(_formatPrice(p.price))),
-                      DataCell(
-                        Text(
-                          _stockLabel(p.inStock),
-                          style: TextStyle(color: stockColor, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: SearchBar(
+                      hintText: 'Фильтр по названию или категории',
+                      leading: Icon(Icons.filter_alt_outlined, color: colors.onSurfaceVariant),
+                      padding: const WidgetStatePropertyAll(
+                        EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      onChanged: (v) => ref.read(catalogSearchQueryProvider.notifier).state = v,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: FilterChip(
+                        label: const Text('Все категории'),
+                        selected: categoryFilter == null,
+                        onSelected: (_) {
+                          ref.read(catalogCategoryFilterProvider.notifier).state = null;
+                        },
+                        selectedColor: colors.primaryContainer,
+                      ),
+                    ),
+                    for (final c in categories)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: FilterChip(
+                          label: Text(c),
+                          selected: categoryFilter == c,
+                          onSelected: (_) {
+                            ref.read(catalogCategoryFilterProvider.notifier).state =
+                                categoryFilter == c ? null : c;
+                          },
+                          selectedColor: colors.primaryContainer,
                         ),
                       ),
-                    ],
-                  );
-                }).toList(),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
+              const SizedBox(height: 20),
+              Card(
+                child: DataTable(
+                  showCheckboxColumn: false,
+                  columns: const [
+                    DataColumn(label: Text('Название')),
+                    DataColumn(label: Text('Категория')),
+                    DataColumn(label: Text('Цена')),
+                    DataColumn(label: Text('Наличие')),
+                  ],
+                  rows: filtered.map((p) {
+                    final stockColor = p.inStock ? colors.primary : colors.error;
+                    return DataRow(
+                      onSelectChanged: (_) => context.go('${Routes.catalog}/${p.id}'),
+                      cells: [
+                        DataCell(Text(p.name)),
+                        DataCell(Text(p.category)),
+                        DataCell(Text(_formatPrice(p.price))),
+                        DataCell(
+                          Text(
+                            _stockLabel(p.inStock),
+                            style: TextStyle(color: stockColor, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
