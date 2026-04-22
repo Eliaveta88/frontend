@@ -70,8 +70,12 @@ class IdentityApiService {
   }
 
   /// Список пользователей (для экрана администрирования).
+  ///
+  /// Эндпоинт администратора — требует JWT, поэтому используется клиент с
+  /// [AuthInterceptor], а не анонимный [_raw].
   Future<Map<String, dynamic>> listUsers({int skip = 0, int limit = 100}) async {
-    final response = await _raw.get<Map<String, dynamic>>(ApiPaths.identityUsersList(skip: skip, limit: limit));
+    final response = await _authenticated
+        .get<Map<String, dynamic>>(ApiPaths.identityUsersList(skip: skip, limit: limit));
     final data = response.data;
     if (data == null) {
       throw Exception('Пустой ответ списка пользователей');
