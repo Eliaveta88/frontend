@@ -15,6 +15,7 @@ import '../../features/warehouse/pages/warehouse_page.dart';
 import '../auth/auth_flags.dart';
 import '../auth/auth_provider.dart';
 import '../widgets/app_shell.dart';
+import 'auth_redirect.dart';
 import 'go_router_refresh.dart';
 import 'route_names.dart';
 
@@ -23,20 +24,19 @@ final _shellNavKey = GlobalKey<NavigatorState>();
 
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ref.watch(goRouterRefreshProvider);
+  final authGate = ref.watch(authEnabledProvider);
 
   return GoRouter(
     navigatorKey: _rootNavKey,
     refreshListenable: refresh,
-    initialLocation: kAuthEnabled ? Routes.login : Routes.dashboard,
+    initialLocation: authGate ? Routes.login : Routes.dashboard,
     redirect: (context, state) {
-      if (!kAuthEnabled) return null;
       final auth = ProviderScope.containerOf(context).read(authProvider);
-      final loggedIn = auth.isAuthenticated;
-      final goingToLogin = state.matchedLocation == Routes.login;
-
-      if (!loggedIn && !goingToLogin) return Routes.login;
-      if (loggedIn && goingToLogin) return Routes.dashboard;
-      return null;
+      return resolveAuthRedirect(
+        authGate: authGate,
+        auth: auth,
+        matchedLocation: state.matchedLocation,
+      );
     },
     routes: [
       GoRoute(
