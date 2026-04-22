@@ -6,8 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../network/api_services/identity_api_service.dart';
 import '../persistence/shared_preferences_provider.dart';
 import '../../features/finance/providers/finance_providers.dart';
+import 'auth_persistence.dart';
 import 'auth_state.dart';
-import 'auth_token_storage.dart';
 import 'user_profile.dart';
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
@@ -23,7 +23,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> _restoreFromStorage() async {
     final prefs = _ref.read(sharedPreferencesProvider);
-    final tokens = await AuthTokenStorage.read(prefs);
+    final tokens = await _ref.read(authPersistenceProvider).readTokens(prefs);
     final access = tokens.access;
     final refresh = tokens.refresh;
     if (access == null ||
@@ -48,10 +48,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
         refresh == null ||
         access.isEmpty ||
         refresh.isEmpty) {
-      await AuthTokenStorage.clear(prefs);
+      await _ref.read(authPersistenceProvider).clearTokens(prefs);
       return;
     }
-    await AuthTokenStorage.save(prefs, access: access, refresh: refresh);
+    await _ref.read(authPersistenceProvider).saveTokens(prefs, access: access, refresh: refresh);
   }
 
   static const int _defaultFinanceClientId = 1;
@@ -156,7 +156,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
     state = const AuthState();
     _ref.read(financeClientIdProvider.notifier).state = _defaultFinanceClientId;
-    await AuthTokenStorage.clear(_ref.read(sharedPreferencesProvider));
+    await _ref.read(authPersistenceProvider).clearTokens(_ref.read(sharedPreferencesProvider));
   }
 
   void setTokens({required String access, required String refresh}) {
@@ -171,6 +171,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   void clearTokens() {
     state = const AuthState();
     _ref.read(financeClientIdProvider.notifier).state = _defaultFinanceClientId;
-    unawaited(AuthTokenStorage.clear(_ref.read(sharedPreferencesProvider)));
+    unawaited(
+      _ref.read(authPersistenceProvider).clearTokens(_ref.read(sharedPreferencesProvider)),
+    );
   }
 }
