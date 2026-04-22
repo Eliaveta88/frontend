@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../auth/auth_flags.dart';
 import '../auth/auth_provider.dart';
 import '../routing/route_names.dart';
 import '../theme/theme_provider.dart';
@@ -13,19 +14,33 @@ class AppShell extends ConsumerWidget {
 
   final Widget child;
 
-  static const _destinations = [
+  static const _baseDestinations = [
     _Dest(icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard, label: 'Дашборд', route: Routes.dashboard),
     _Dest(icon: Icons.receipt_long_outlined, selectedIcon: Icons.receipt_long, label: 'Заказы', route: Routes.orders),
     _Dest(icon: Icons.inventory_2_outlined, selectedIcon: Icons.inventory_2, label: 'Каталог', route: Routes.catalog),
     _Dest(icon: Icons.warehouse_outlined, selectedIcon: Icons.warehouse, label: 'Склад', route: Routes.warehouse),
     _Dest(icon: Icons.account_balance_outlined, selectedIcon: Icons.account_balance, label: 'Финансы', route: Routes.finance),
     _Dest(icon: Icons.local_shipping_outlined, selectedIcon: Icons.local_shipping, label: 'Логистика', route: Routes.logistics),
-    _Dest(icon: Icons.admin_panel_settings_outlined, selectedIcon: Icons.admin_panel_settings, label: 'Админ', route: Routes.admin),
   ];
 
-  int _selectedIndex(String location) {
-    for (var i = _destinations.length - 1; i >= 0; i--) {
-      final route = _destinations[i].route;
+  static const _adminDestination = _Dest(
+    icon: Icons.admin_panel_settings_outlined,
+    selectedIcon: Icons.admin_panel_settings,
+    label: 'Админ',
+    route: Routes.admin,
+  );
+
+  List<_Dest> _destinationsFor(List<String> roles, bool authGate) {
+    final showAdmin = !authGate || roles.any((r) => r.toLowerCase() == 'admin');
+    return [
+      ..._baseDestinations,
+      if (showAdmin) _adminDestination,
+    ];
+  }
+
+  int _selectedIndex(List<_Dest> destinations, String location) {
+    for (var i = destinations.length - 1; i >= 0; i--) {
+      final route = destinations[i].route;
       if (route == Routes.dashboard) {
         if (location == Routes.dashboard) return i;
         continue;
@@ -40,7 +55,10 @@ class AppShell extends ConsumerWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final location = GoRouterState.of(context).matchedLocation;
-    final selected = _selectedIndex(location);
+    final roles = ref.watch(authProvider).profile?.roles ?? const <String>[];
+    final authGate = ref.watch(authEnabledProvider);
+    final destinations = _destinationsFor(roles, authGate);
+    final selected = _selectedIndex(destinations, location);
     final width = MediaQuery.sizeOf(context).width;
     final isCompact = width < 900;
 
@@ -102,6 +120,8 @@ class AppShell extends ConsumerWidget {
               onSelected: (value) {
                 if (value == 'logout') {
                   ref.read(authProvider.notifier).logout();
+                } else if (value == 'profile') {
+                  _showProfileDialog(context, ref);
                 }
               },
             ),
@@ -116,9 +136,9 @@ class AppShell extends ConsumerWidget {
               backgroundColor: colors.surfaceContainerLow,
               selectedIndex: selected,
               onDestinationSelected: (i) {
-                context.go(_destinations[i].route);
+                context.go(destinations[i].route);
               },
-              destinations: _destinations
+              destinations: destinations
                   .map(
                     (d) => NavigationRailDestination(
                       icon: Icon(d.icon),
@@ -158,4 +178,87 @@ class _Dest {
   final IconData selectedIcon;
   final String label;
   final String route;
+}
+
+void _showProfileDialog(BuildContext context, WidgetRef ref) {
+  final profile = ref.read(authProvider).profile;
+  final theme = Theme.of(context);
+
+  if (profile == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Профиль недоступен — войдите в систему'),
+      ),
+    );
+    return;
+  }
+
+  showDialog<void>(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
+        title: const Text('Профиль'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _ProfileRow(label: 'ID', value: '${profile.id}'),
+            _ProfileRow(label: 'Пользователь', value: profile.username),
+            _ProfileRow(label: 'Email', value: profile.email),
+            _ProfileRow(
+              label: 'Роли',
+              value: profile.roles.isEmpty ? '—' : profile.roles.join(', '),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Закрыть'),
+          ),
+          FilledButton.tonalIcon(
+            icon: const Icon(Icons.logout),
+            label: const Text('Выйти'),
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              ref.read(authProvider.notifier).logout();
+            },
+          ),
+        ],
+        titleTextStyle: theme.textTheme.titleLarge,
+      );
+    },
+  );
+}
+
+class _ProfileRow extends StatelessWidget {
+  const _ProfileRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Expanded(
+            child: SelectableText(value, style: theme.textTheme.bodyMedium),
+          ),
+        ],
+      ),
+    );
+  }
 }
