@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/i18n/app_strings.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
@@ -20,6 +22,14 @@ class GastroRouteApp extends ConsumerWidget {
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,
       routerConfig: router,
+      locale: const Locale('ru'),
+      supportedLocales: AppStrings.supportedLocales,
+      localizationsDelegates: const [
+        AppStrings.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
     );
   }
 }
