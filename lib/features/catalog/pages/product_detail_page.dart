@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/routing/route_names.dart';
 import '../providers/catalog_providers.dart';
 
 class ProductDetailPage extends ConsumerWidget {
@@ -48,7 +49,13 @@ class ProductDetailPage extends ConsumerWidget {
             children: [
               IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: () => context.go('/catalog'),
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go(Routes.catalog);
+                  }
+                },
               ),
               const SizedBox(width: 8),
               Expanded(

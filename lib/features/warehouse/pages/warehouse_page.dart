@@ -145,7 +145,8 @@ class WarehousePage extends ConsumerWidget {
 
     final messenger = ScaffoldMessenger.of(context);
 
-    await showBokehModal<void>(
+    try {
+      await showBokehModal<void>(
       context: context,
       maxWidth: 440,
       child: StatefulBuilder(
@@ -263,5 +264,12 @@ class WarehousePage extends ConsumerWidget {
         },
       ),
     );
+    } finally {
+      productCtrl.dispose();
+      qtyCtrl.dispose();
+      unitCtrl.dispose();
+      cellCtrl.dispose();
+      batchCtrl.dispose();
+    }
   }
 }

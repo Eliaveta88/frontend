@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/routing/route_names.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/network/dio_error_mapper.dart';
+import '../../../core/widgets/async_error_card.dart';
 import '../data/order_models.dart';
 import '../providers/orders_providers.dart';
 
@@ -14,7 +16,6 @@ class OrderDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
     final parsed = int.tryParse(id);
     if (parsed == null) {
       return ListView(
@@ -30,14 +31,15 @@ class OrderDetailPage extends ConsumerWidget {
     return async.when(
       data: (order) => _OrderDetailBody(order: order),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          SelectableText(
-            'Ошибка загрузки заказа: ${dioErrorMessage(e)}',
-            style: TextStyle(color: colors.error),
+      error: (e, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: AsyncErrorCard(
+            error: e,
+            title: 'Не удалось загрузить заказ',
+            onRetry: () => ref.invalidate(orderDetailProvider(parsed)),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -60,7 +62,13 @@ class _OrderDetailBody extends StatelessWidget {
           children: [
             IconButton(
               icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.of(context).maybePop(),
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go(Routes.orders);
+                }
+              },
             ),
             const SizedBox(width: 8),
             Text('Заказ #${order.id}', style: theme.textTheme.headlineMedium),

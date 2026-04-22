@@ -240,6 +240,14 @@ class OrdersPage extends ConsumerWidget {
                   final pid = int.tryParse(productCtrl.text.trim());
                   final qty = double.tryParse(qtyCtrl.text.trim().replaceAll(',', '.'));
                   if (clientId == null || pid == null || qty == null || qty <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Проверьте поля: client_id и product_id должны быть целыми числами, '
+                          'а «Количество» — положительным.',
+                        ),
+                      ),
+                    );
                     return;
                   }
                   try {

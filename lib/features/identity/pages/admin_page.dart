@@ -106,16 +106,51 @@ class AdminPage extends ConsumerWidget {
           const SizedBox(height: 24),
           Text('Роли и права', style: theme.textTheme.titleMedium),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _RoleCard(role: 'Администратор', perms: 'Полный доступ', count: 1, colors: colors),
-              _RoleCard(role: 'Менеджер продаж', perms: 'Заказы, каталог, финансы', count: 3, colors: colors),
-              _RoleCard(role: 'Кладовщик', perms: 'Склад, каталог', count: 2, colors: colors),
-              _RoleCard(role: 'Водитель', perms: 'Логистика (свои рейсы)', count: 8, colors: colors),
-              _RoleCard(role: 'Бухгалтер', perms: 'Финансы, отчёты', count: 1, colors: colors),
-            ],
+          usersAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: SkeletonLine(width: 220, height: 14),
+            ),
+            error: (_, __) => Text(
+              'Счётчики ролей недоступны',
+              style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+            ),
+            data: (page) {
+              final counts = <String, int>{};
+              for (final u in page.items) {
+                if (u.roles.isEmpty) {
+                  counts['user'] = (counts['user'] ?? 0) + 1;
+                  continue;
+                }
+                for (final r in u.roles) {
+                  final key = r.toLowerCase();
+                  counts[key] = (counts[key] ?? 0) + 1;
+                }
+              }
+
+              const rolesMeta = <({String key, String label, String perms})>[
+                (key: 'admin', label: 'Администратор', perms: 'Полный доступ'),
+                (key: 'manager', label: 'Менеджер продаж', perms: 'Заказы, каталог, финансы'),
+                (key: 'warehouse', label: 'Кладовщик', perms: 'Склад, каталог'),
+                (key: 'driver', label: 'Водитель', perms: 'Логистика (свои рейсы)'),
+                (key: 'accountant', label: 'Бухгалтер', perms: 'Финансы, отчёты'),
+                (key: 'user', label: 'Пользователь', perms: 'Базовый доступ'),
+              ];
+
+              final cards = <Widget>[];
+              for (final meta in rolesMeta) {
+                final cnt = counts[meta.key] ?? 0;
+                if (cnt == 0 && meta.key != 'admin') continue;
+                cards.add(_RoleCard(role: meta.label, perms: meta.perms, count: cnt, colors: colors));
+              }
+              if (cards.isEmpty) {
+                return Text(
+                  'Ролей в выборке не найдено',
+                  style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+                );
+              }
+              return Wrap(spacing: 12, runSpacing: 12, children: cards);
+            },
           ),
         ],
       ),
