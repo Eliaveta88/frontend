@@ -106,13 +106,14 @@ class AppShell extends ConsumerWidget {
               itemBuilder: (_) {
                 final name = ref.watch(authProvider).profile?.username;
                 return [
-                  PopupMenuItem(
-                    enabled: false,
-                    child: Text(
-                      name != null ? 'Вошли как $name' : 'Гость',
-                      style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+                  if (name != null)
+                    PopupMenuItem(
+                      enabled: false,
+                      child: Text(
+                        'Вошли как $name',
+                        style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+                      ),
                     ),
-                  ),
                   const PopupMenuItem(value: 'profile', child: Text('Профиль')),
                   const PopupMenuItem(value: 'logout', child: Text('Выход')),
                 ];

@@ -3,8 +3,8 @@ FROM ghcr.io/cirruslabs/flutter:stable AS build
 WORKDIR /app
 
 # Build-time флаги, которые пробрасываются в Flutter через --dart-define.
-# `AUTH_ENABLED=true` в prod-сборке включает обязательный вход + guard'ы роутера.
-ARG AUTH_ENABLED=false
+# `AUTH_ENABLED=true` — обязательный вход + guard'ы роутера (гостевого режима нет).
+ARG AUTH_ENABLED=true
 ARG API_BASE_URL=""
 
 COPY pubspec.yaml ./
