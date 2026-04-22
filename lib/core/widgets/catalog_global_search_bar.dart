@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../network/api_services/catalog_api_service.dart';
+import '../network/dio_error_mapper.dart';
 import '../routing/route_names.dart';
 import '../../features/catalog/data/catalog_models.dart';
 
@@ -23,6 +24,7 @@ class _CatalogGlobalSearchBarState extends ConsumerState<CatalogGlobalSearchBar>
   Timer? _debounce;
   List<CatalogAutocompleteItem> _options = [];
   bool _loading = false;
+  String? _error;
 
   @override
   void initState() {
@@ -37,28 +39,35 @@ class _CatalogGlobalSearchBarState extends ConsumerState<CatalogGlobalSearchBar>
       setState(() {
         _options = [];
         _loading = false;
+        _error = null;
       });
       return;
     }
     _debounce = Timer(const Duration(milliseconds: 350), () async {
       if (!mounted) return;
-      setState(() => _loading = true);
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
       try {
         final items = await ref.read(catalogApiServiceProvider).autocomplete(q, limit: 12);
         if (!mounted) return;
         setState(() {
           _options = items;
           _loading = false;
+          _error = null;
         });
         if (items.isNotEmpty) {
           _controller.openView();
         }
-      } catch (_) {
+      } catch (e) {
         if (!mounted) return;
         setState(() {
           _options = [];
           _loading = false;
+          _error = dioErrorMessage(e);
         });
+        _controller.openView();
       }
     });
   }
@@ -124,6 +133,17 @@ class _CatalogGlobalSearchBarState extends ConsumerState<CatalogGlobalSearchBar>
               const ListTile(
                 title: Text('Введите не менее 2 символов'),
                 dense: true,
+              ),
+            ];
+          }
+          if (_error != null) {
+            return [
+              ListTile(
+                leading: Icon(Icons.error_outline, color: colors.error),
+                title: const Text('Ошибка автодополнения'),
+                subtitle: Text(_error!),
+                dense: true,
+                onTap: _onQueryChanged,
               ),
             ];
           }

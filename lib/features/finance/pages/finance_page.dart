@@ -140,29 +140,43 @@ class _FinancePageState extends ConsumerState<FinancePage> {
               const SizedBox(height: 24),
               Text('Транзакции', style: theme.textTheme.titleMedium),
               const SizedBox(height: 12),
-              data.transactions.isEmpty
-                  ? EmptyListState(
-                      icon: Icons.payments_outlined,
-                      title: 'Транзакций нет',
-                      message: 'Операции по выбранному клиенту пока не найдены.',
-                    )
-                  : Card(
-                      child: Column(
-                        children: data.transactions.map((tx) {
-                          final amt = tx['amount'];
-                          final desc = tx['description']?.toString() ?? '';
-                          final st = tx['status']?.toString() ?? '';
-                          return ListTile(
-                            title: Text(desc),
-                            subtitle: Text(st),
-                            trailing: Text(
-                              '$amt',
-                              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                            ),
-                          );
-                        }).toList(),
-                      ),
+              if (data.transactionsError != null)
+                Card(
+                  color: colors.errorContainer,
+                  child: ListTile(
+                    leading: Icon(Icons.error_outline, color: colors.error),
+                    title: Text('Не удалось загрузить транзакции'),
+                    subtitle: Text(data.transactionsError!),
+                    trailing: TextButton(
+                      onPressed: () => ref.invalidate(financeSnapshotProvider),
+                      child: const Text('Повторить'),
                     ),
+                  ),
+                )
+              else if (data.transactions.isEmpty)
+                EmptyListState(
+                  icon: Icons.payments_outlined,
+                  title: 'Транзакций нет',
+                  message: 'Операции по выбранному клиенту пока не найдены.',
+                )
+              else
+                Card(
+                  child: Column(
+                    children: data.transactions.map((tx) {
+                      final amt = tx['amount'];
+                      final desc = tx['description']?.toString() ?? '';
+                      final st = tx['status']?.toString() ?? '';
+                      return ListTile(
+                        title: Text(desc),
+                        subtitle: Text(st),
+                        trailing: Text(
+                          '$amt',
+                          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
             ],
           ),
         ),

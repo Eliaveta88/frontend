@@ -172,41 +172,94 @@ class DashboardPage extends ConsumerWidget {
                   ),
                 ),
               ),
-              data: (items) {
+              data: (activity) {
+                final items = activity.items;
+                final children = <Widget>[];
+
+                if (activity.hasPartialFailure) {
+                  children.add(
+                    Card(
+                      color: colors.errorContainer,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Лента подгружена частично',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: colors.onErrorContainer,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            if (activity.ordersError != null)
+                              Text(
+                                '• заказы: ${activity.ordersError}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colors.onErrorContainer,
+                                ),
+                              ),
+                            if (activity.transactionsError != null)
+                              Text(
+                                '• транзакции: ${activity.transactionsError}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colors.onErrorContainer,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                  children.add(const SizedBox(height: 12));
+                }
+
                 if (items.isEmpty) {
-                  return Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text(
-                        'Пока нет событий. Всего заказов в системе: ${_fmtInt(summary.ordersTotal)}',
-                        style: theme.textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
+                  children.add(
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          'Пока нет событий. Всего заказов в системе: ${_fmtInt(summary.ordersTotal)}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                } else {
+                  children.add(
+                    Card(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (final item in items)
+                            ListTile(
+                              leading: Icon(
+                                item.kind == ActivityFeedKind.order
+                                    ? Icons.receipt_long
+                                    : Icons.payments_outlined,
+                                color: colors.primary,
+                              ),
+                              title: Text(item.title),
+                              subtitle: Text(item.subtitle),
+                              trailing: Text(
+                                _fmtActivityTime(item.at),
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: colors.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   );
                 }
-                return Card(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final item in items)
-                        ListTile(
-                          leading: Icon(
-                            item.kind == ActivityFeedKind.order
-                                ? Icons.receipt_long
-                                : Icons.payments_outlined,
-                            color: colors.primary,
-                          ),
-                          title: Text(item.title),
-                          subtitle: Text(item.subtitle),
-                          trailing: Text(
-                            _fmtActivityTime(item.at),
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: colors.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: children,
                 );
               },
             ),
